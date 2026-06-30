@@ -1,0 +1,20 @@
+services:
+  frontend:
+    container_name: smartbudget_frontend
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    ports:
+      - "5173:5173"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+      - VITE_API_URL=http://localhost
+    networks:
+      - smartbudget_sail
+
+networks:
+  smartbudget_sail:
+    external: true
