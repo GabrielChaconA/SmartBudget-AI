@@ -230,6 +230,25 @@ export const portfolioPerformance = [
   { month: "Sep", value: 132680 },
 ]
 
+export interface InvestmentCategory {
+  id: string;
+  label: string;
+  icon: string;
+  value: number;
+  returnPercent: number;
+  dayPercent: number;
+}
+
+export interface InvestmentHolding {
+  id: string;
+  name: string;
+  ticker: string;
+  value: number;
+  returnPercent: number;
+  dayPercent: number;
+}
+
+
 export const investmentCategories = [
   { id: "etfs", label: "ETFs", icon: "etf", value: 41200, returnPercent: 14.2, dayPercent: 0.62 },
   { id: "stocks", label: "Empresas", icon: "company", value: 52800, returnPercent: 26.8, dayPercent: 1.45 },

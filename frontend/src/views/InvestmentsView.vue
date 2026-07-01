@@ -1,10 +1,14 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { TrendingUp, TrendingDown, Layers, Building2, Bitcoin, Dices, ArrowUpRight, ArrowDownRight } from '@lucide/vue'
+import { ref, computed, onMounted } from 'vue'
+import { TrendingUp, TrendingDown, Layers, Building2, Bitcoin, Dices, ArrowUpRight, ArrowDownRight, RefreshCw, AlertCircle } from '@lucide/vue'
 import DashboardLayout from '@/components/DashboardLayout.vue'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { investmentsSummary, portfolioPerformance, investmentCategories, investmentHoldings, formatCurrency } from '@/lib/data'
+import { Button } from '@/components/ui/button'
+import { investmentsSummary, portfolioPerformance, investmentCategories as fallbackCategories, investmentHoldings as fallbackHoldings, formatCurrency, type InvestmentCategory, type InvestmentHolding } from '@/lib/data'
+import { finnhubService } from '@/services/finnhub'
+import { coingeckoService } from '@/services/coingecko'
+import { oddsApiService } from '@/services/oddsApi'
 import { use } from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
 import { LineChart } from 'echarts/charts'
@@ -20,8 +24,104 @@ const categoryIcons: Record<string, any> = {
   bet: Dices,
 }
 
-const activeCat = ref(investmentCategories[0].id)
-const holdings = computed(() => investmentHoldings[activeCat.value as keyof typeof investmentHoldings] ?? [])
+const activeCategories = ref<InvestmentCategory[]>([...fallbackCategories])
+const activeHoldings = ref<Record<string, InvestmentHolding[]>>({ ...fallbackHoldings })
+
+const activeCat = ref(activeCategories.value[0].id)
+const holdings = computed(() => activeHoldings.value[activeCat.value] ?? [])
+
+const isLoading = ref(false)
+const isError = ref(false)
+const lastUpdate = ref<Date | null>(null)
+
+const fetchData = async () => {
+  isLoading.value = true
+  isError.value = false
+  
+  try {
+    const cryptoIds = fallbackHoldings.crypto.map(c => c.name.toLowerCase())
+    
+    const [etfRes, stockRes, cryptoRes, oddsRes] = await Promise.allSettled([
+      Promise.all(fallbackHoldings.etfs.map(h => finnhubService.getQuote(h.ticker).then(q => ({ h, q })))),
+      Promise.all(fallbackHoldings.stocks.map(h => finnhubService.getQuote(h.ticker).then(q => ({ h, q })))),
+      coingeckoService.getMarkets(cryptoIds),
+      oddsApiService.getUpcomingOdds()
+    ])
+    
+    const newHoldings = { ...fallbackHoldings }
+    
+    if (etfRes.status === 'fulfilled') {
+      newHoldings.etfs = etfRes.value.map(item => ({
+        ...item.h,
+        value: item.q.c > 0 ? item.q.c * (item.h.value / 100) : item.h.value,
+        returnPercent: item.q.dp,
+        dayPercent: item.q.dp
+      }))
+    }
+    
+    if (stockRes.status === 'fulfilled') {
+      newHoldings.stocks = stockRes.value.map(item => ({
+        ...item.h,
+        value: item.q.c > 0 ? item.q.c * (item.h.value / 100) : item.h.value,
+        returnPercent: item.q.dp,
+        dayPercent: item.q.dp
+      }))
+    }
+    
+    if (cryptoRes.status === 'fulfilled' && cryptoRes.value.length > 0) {
+      newHoldings.crypto = newHoldings.crypto.map(c => {
+        const market = cryptoRes.value.find(m => m.symbol.toLowerCase() === c.ticker.toLowerCase())
+        if (market) {
+          return {
+            ...c,
+            name: market.name,
+            value: market.current_price * (c.value / 1000),
+            returnPercent: market.price_change_percentage_24h,
+            dayPercent: market.price_change_percentage_24h
+          }
+        }
+        return c
+      })
+    }
+    
+    if (oddsRes.status === 'fulfilled' && oddsRes.value.length > 0) {
+      newHoldings.bets = oddsRes.value.slice(0, 3).map((event, index) => {
+        const fallback = fallbackHoldings.bets[index] || fallbackHoldings.bets[0]
+        const homeOdds = event.bookmakers?.[0]?.markets?.[0]?.outcomes?.[0]?.price || 1.0
+        return {
+          id: event.id,
+          name: `${event.home_team} vs ${event.away_team}`,
+          ticker: event.sport_title,
+          value: fallback.value,
+          returnPercent: homeOdds,
+          dayPercent: 0
+        }
+      })
+    }
+    
+    activeHoldings.value = newHoldings
+    
+    activeCategories.value = activeCategories.value.map(cat => {
+      const catHoldings = newHoldings[cat.id as keyof typeof newHoldings] || []
+      const totalValue = catHoldings.reduce((sum, h) => sum + h.value, 0)
+      return {
+        ...cat,
+        value: totalValue > 0 ? totalValue : cat.value
+      }
+    })
+    
+  } catch (e) {
+    console.error(e)
+    isError.value = true
+  } finally {
+    isLoading.value = false
+    lastUpdate.value = new Date()
+  }
+}
+
+onMounted(() => {
+  fetchData()
+})
 
 const chartOption = ref({
   tooltip: {
@@ -72,13 +172,29 @@ const chartOption = ref({
 <template>
   <DashboardLayout>
     <div class="mx-auto max-w-6xl">
-      <header class="pb-6">
-        <h1 class="text-2xl font-semibold tracking-tight text-foreground">
-          Investments
-        </h1>
-        <p class="mt-1 text-sm text-muted-foreground">
-          Track the performance of your ETFs, companies, crypto and relevant bets.
-        </p>
+      <header class="pb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 class="text-2xl font-semibold tracking-tight text-foreground">
+            Investments
+          </h1>
+          <p class="mt-1 text-sm text-muted-foreground">
+            Track the performance of your ETFs, companies, crypto and relevant bets.
+          </p>
+        </div>
+        <div class="flex flex-col items-end gap-2">
+          <div class="flex items-center gap-3">
+            <span v-if="lastUpdate" class="text-xs text-muted-foreground">
+              Última actualización: {{ lastUpdate.toLocaleTimeString() }}
+            </span>
+            <Button variant="outline" size="sm" @click="fetchData" :disabled="isLoading">
+              <RefreshCw class="size-4 mr-2" :class="{ 'animate-spin': isLoading }" />
+              Actualizar
+            </Button>
+          </div>
+          <span v-if="isError" class="text-xs text-destructive flex items-center gap-1">
+            <AlertCircle class="size-3" /> Error al obtener algunos datos
+          </span>
+        </div>
       </header>
 
       <!-- Top summary -->
@@ -158,7 +274,7 @@ const chartOption = ref({
         </h2>
         <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <button
-            v-for="cat in investmentCategories"
+            v-for="cat in activeCategories"
             :key="cat.id"
             type="button"
             @click="activeCat = cat.id"
@@ -195,7 +311,7 @@ const chartOption = ref({
       <section class="mt-8">
         <div class="mb-3 flex items-center gap-2">
           <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-            {{ investmentCategories.find(c => c.id === activeCat)?.label }} holdings
+            {{ activeCategories.find(c => c.id === activeCat)?.label }} holdings
           </h2>
           <Badge variant="secondary">{{ holdings.length }}</Badge>
         </div>
