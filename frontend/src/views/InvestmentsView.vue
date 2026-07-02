@@ -9,6 +9,8 @@ import { investmentsSummary, portfolioPerformance, investmentCategories as fallb
 import { finnhubService } from '@/services/finnhub'
 import { coingeckoService } from '@/services/coingecko'
 import { oddsApiService } from '@/services/oddsApi'
+import { useUser } from '@/composables/useUser'
+import { useRouter } from 'vue-router'
 import { use } from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
 import { LineChart } from 'echarts/charts'
@@ -23,6 +25,16 @@ const categoryIcons: Record<string, any> = {
   crypto: Bitcoin,
   bet: Dices,
 }
+
+const { user } = useUser()
+const router = useRouter()
+
+const totalPortfolioValue = computed(() => {
+  if (!user.value?.accounts) return 0
+  return user.value.accounts
+    .filter((a: any) => a.type === 'investment')
+    .reduce((sum: number, a: any) => sum + Number(a.balance), 0)
+})
 
 const activeCategories = ref<InvestmentCategory[]>([...fallbackCategories])
 const activeHoldings = ref<Record<string, InvestmentHolding[]>>({ ...fallbackHoldings })
@@ -204,7 +216,7 @@ const chartOption = ref({
             <div>
               <CardDescription>Total portfolio value</CardDescription>
               <CardTitle class="text-3xl">
-                {{ formatCurrency(investmentsSummary.totalValue) }}
+                {{ formatCurrency(totalPortfolioValue) }}
               </CardTitle>
               <div class="mt-2 flex items-center gap-3">
                 <span :class="[
@@ -248,19 +260,19 @@ const chartOption = ref({
             <div class="flex items-center justify-between">
               <span class="text-sm text-muted-foreground">Invested</span>
               <span class="font-semibold tabular-nums text-foreground">
-                {{ formatCurrency(investmentsSummary.investedAmount) }}
+                {{ formatCurrency(totalPortfolioValue) }}
               </span>
             </div>
             <div class="flex items-center justify-between">
               <span class="text-sm text-muted-foreground">Current value</span>
               <span class="font-semibold tabular-nums text-foreground">
-                {{ formatCurrency(investmentsSummary.totalValue) }}
+                {{ formatCurrency(totalPortfolioValue) }}
               </span>
             </div>
             <div class="flex items-center justify-between">
               <span class="text-sm text-muted-foreground">Total gain</span>
               <span class="font-semibold tabular-nums text-primary">
-                {{ formatCurrency(investmentsSummary.totalValue - investmentsSummary.investedAmount) }}
+                {{ formatCurrency(0) }}
               </span>
             </div>
           </CardContent>
@@ -354,6 +366,12 @@ const chartOption = ref({
             </div>
           </CardContent>
         </Card>
+        
+        <div class="mt-6 flex justify-center">
+          <Button variant="outline" class="w-full sm:w-auto" @click="router.push(`/market-gainers?category=${activeCat}`)">
+            See more market options
+          </Button>
+        </div>
       </section>
     </div>
   </DashboardLayout>

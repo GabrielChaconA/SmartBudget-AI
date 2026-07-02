@@ -130,6 +130,55 @@ export function useUser() {
     }
   };
 
+  const updateProfile = async (data: { name?: string, avatar?: string }) => {
+    try {
+      await axios.put('/api/user/profile', data);
+      if (user.value) {
+        if (data.name) user.value.name = data.name;
+        if (data.avatar) user.value.avatar = data.avatar;
+      }
+      return true;
+    } catch (err) {
+      console.error('Error updating profile', err);
+      return false;
+    }
+  };
+
+  const uploadAvatar = async (file: File) => {
+    try {
+      const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+      const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
+      
+      if (!cloudName || !uploadPreset) {
+        console.error('Cloudinary credentials missing');
+        return false;
+      }
+
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('upload_preset', uploadPreset);
+
+      isLoading.value = true;
+      const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
+        method: 'POST',
+        body: formData
+      });
+      const data = await res.json();
+      
+      if (data.secure_url) {
+        await updateProfile({ avatar: data.secure_url });
+        return true;
+      }
+      return false;
+    } catch (err) {
+      console.error('Error uploading avatar', err);
+      return false;
+    } finally {
+      isLoading.value = false;
+    }
+  };
+
+
   onMounted(() => {
     fetchUser();
   });
@@ -144,6 +193,8 @@ export function useUser() {
     allocateFund,
     fetchIncomeStats,
     searchSubscriptionCatalog,
-    addSubscription
+    addSubscription,
+    updateProfile,
+    uploadAvatar
   };
 }

@@ -10,7 +10,8 @@ import {
   Sparkles,
   CreditCard,
   TrendingUp,
-  LogOut
+  LogOut,
+  Camera
 } from '@lucide/vue'
 
 import { cn } from "@/lib/utils"

@@ -8,10 +8,22 @@ import { Badge } from '@/components/ui/badge'
 import { formatCurrency } from '@/lib/data'
 import { useUser } from '@/composables/useUser'
 import { useAuth } from '@/composables/useAuth'
-import { computed } from 'vue'
+import EditProfileModal from '@/components/EditProfileModal.vue'
+import { ref, computed } from 'vue'
 
-const { user, isLoading: isUserLoading, error: userError } = useUser()
+const { user, isLoading: isUserLoading, error: userError, uploadAvatar } = useUser()
 const { logout } = useAuth()
+const isEditModalOpen = ref(false)
+const fileInput = ref<HTMLInputElement | null>(null)
+
+const handleFileChange = async (event: Event) => {
+  const target = event.target as HTMLInputElement;
+  if (target.files && target.files.length > 0) {
+    const file = target.files[0];
+    await uploadAvatar(file);
+    target.value = ''; // reset
+  }
+}
 
 const goals = computed(() => {
   if (!user.value?.goals) return []
@@ -55,6 +67,8 @@ function getInitials(name: string) {
         </p>
       </div>
 
+      <input type="file" accept="image/*" class="hidden" ref="fileInput" @change="handleFileChange" />
+
       <!-- Identity header -->
       <Card class="border-border min-h-[160px] flex flex-col justify-center">
         <CardContent v-if="isUserLoading" class="flex flex-col items-center justify-center py-6 text-muted-foreground">
@@ -66,7 +80,11 @@ function getInitials(name: string) {
         </CardContent>
         <CardContent v-else-if="user" class="flex flex-col gap-6 p-6 sm:flex-row sm:items-center sm:justify-between">
           <div class="flex flex-col items-center gap-4 text-center sm:flex-row sm:text-left">
-            <div class="flex size-20 items-center justify-center overflow-hidden rounded-full bg-muted">
+            <div 
+              class="flex size-20 items-center justify-center overflow-hidden rounded-full bg-muted cursor-pointer hover:opacity-80 transition-opacity" 
+              @click="fileInput?.click()"
+              title="Change profile picture"
+            >
               <img v-if="user.avatar" :src="user.avatar" :alt="user.name || 'User'" class="h-full w-full object-cover" />
               <span v-else class="text-xl font-medium text-muted-foreground">{{ getInitials(user.name || '') }}</span>
             </div>
@@ -75,10 +93,6 @@ function getInitials(name: string) {
                 <h2 class="text-xl font-semibold text-foreground">
                   {{ user.name || 'Anonymous' }}
                 </h2>
-                <Badge>
-                  <Crown class="size-3 mr-1" />
-                  Premium
-                </Badge>
               </div>
               <p class="mt-1 text-sm text-muted-foreground">
                 {{ user.email || 'No email provided' }}
@@ -89,7 +103,7 @@ function getInitials(name: string) {
             </div>
           </div>
           <div class="flex flex-wrap justify-center gap-3">
-            <Button>
+            <Button class="bg-green-600 hover:bg-green-700 text-white" @click="isEditModalOpen = true">
               <Pencil class="mr-2 h-4 w-4" />
               Edit Profile
             </Button>
@@ -203,5 +217,6 @@ function getInitials(name: string) {
         </div>
       </div>
     </div>
+    <EditProfileModal v-model:open="isEditModalOpen" />
   </DashboardLayout>
 </template>

@@ -1,7 +1,10 @@
 import axios from 'axios'
 
 const API_KEY = import.meta.env.VITE_ODDS_API_KEY
-const BASE_URL = 'https://api.the-odds-api.com/v4/sports'
+const BASE_URL = '/odds-api/v4/sports'
+
+const api = axios.create({ baseURL: '' })
+delete api.defaults.headers.common['Authorization']
 
 export interface OddsEvent {
   id: string;
@@ -23,9 +26,9 @@ export interface OddsEvent {
 }
 
 export const oddsApiService = {
-  async getUpcomingOdds(sport: string = 'upcoming'): Promise<OddsEvent[]> {
+  async getUpcomingOdds(sport: string = 'upcoming', limit: number = 5): Promise<OddsEvent[]> {
     try {
-      const response = await axios.get(`${BASE_URL}/${sport}/odds/`, {
+      const response = await api.get(`${BASE_URL}/${sport}/odds/`, {
         params: {
           apiKey: API_KEY,
           regions: 'us',
@@ -33,8 +36,8 @@ export const oddsApiService = {
           oddsFormat: 'decimal'
         }
       })
-      // Return top 5 matches
-      return response.data.slice(0, 5)
+      // Return top limit matches
+      return response.data.slice(0, limit)
     } catch (error) {
       console.error(`Error fetching Odds API:`, error)
       return []

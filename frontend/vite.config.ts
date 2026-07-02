@@ -25,6 +25,16 @@ export default defineConfig({
       '/sanctum': {
         target: 'http://smartbudget_api',
         changeOrigin: true,
+      },
+      '/odds-api': {
+        target: 'https://api.the-odds-api.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/odds-api/, '')
+      },
+      '/fmp-api': {
+        target: 'https://financialmodelingprep.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/fmp-api/, '')
       }
     }
   }
