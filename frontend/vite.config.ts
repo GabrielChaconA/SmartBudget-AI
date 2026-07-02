@@ -16,6 +16,16 @@ export default defineConfig({
     strictPort: true,
     watch: {
       usePolling: true, // Necessary for some Windows/WSL/Docker setups
+    },
+    proxy: {
+      '/api': {
+        target: 'http://smartbudget_api',
+        changeOrigin: true,
+      },
+      '/sanctum': {
+        target: 'http://smartbudget_api',
+        changeOrigin: true,
+      }
     }
   }
 })

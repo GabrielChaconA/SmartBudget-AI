@@ -1,17 +1,46 @@
 <script setup lang="ts">
-import { RouterLink } from 'vue-router'
-import { Pencil, Shield, LogOut, Target, Crown, Landmark, LineChart } from '@lucide/vue'
+
+import { Pencil, Shield, LogOut, Target, Crown, Landmark, LineChart, Loader2 } from '@lucide/vue'
 import DashboardLayout from '@/components/DashboardLayout.vue'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { user, linkedAccounts, investmentAccounts, formatCurrency } from '@/lib/data'
+import { formatCurrency } from '@/lib/data'
+import { useUser } from '@/composables/useUser'
+import { useAuth } from '@/composables/useAuth'
+import { computed } from 'vue'
 
-const goals = [
-  { label: 'Emergency fund', current: 68 },
-  { label: 'Vacation 2026', current: 42 },
-  { label: 'New apartment', current: 25 },
-]
+const { user, isLoading: isUserLoading, error: userError } = useUser()
+const { logout } = useAuth()
+
+const goals = computed(() => {
+  if (!user.value?.goals) return []
+  return user.value.goals.map((g: any) => {
+    let current = 0;
+    if (g.target_amount > 0) {
+      current = Math.min(100, Math.round((g.current_amount / g.target_amount) * 100));
+    }
+    return { label: g.name, current }
+  })
+})
+
+const linkedAccounts = computed(() => {
+  if (!user.value?.accounts) return []
+  return user.value.accounts.filter((a: any) => a.type !== 'investment')
+})
+
+const investmentAccounts = computed(() => {
+  if (!user.value?.accounts) return []
+  return user.value.accounts.filter((a: any) => a.type === 'investment')
+})
+
+function getInitials(name: string) {
+  if (!name) return '?'
+  const parts = name.split(' ').filter(Boolean)
+  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase()
+  if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase()
+  return '?'
+}
 </script>
 
 <template>
@@ -27,17 +56,24 @@ const goals = [
       </div>
 
       <!-- Identity header -->
-      <Card class="border-border">
-        <CardContent class="flex flex-col gap-6 p-6 sm:flex-row sm:items-center sm:justify-between">
+      <Card class="border-border min-h-[160px] flex flex-col justify-center">
+        <CardContent v-if="isUserLoading" class="flex flex-col items-center justify-center py-6 text-muted-foreground">
+          <Loader2 class="size-6 animate-spin mb-2" />
+          <p>Loading profile...</p>
+        </CardContent>
+        <CardContent v-else-if="userError" class="flex flex-col items-center justify-center py-6 text-destructive">
+          <p>{{ userError }}</p>
+        </CardContent>
+        <CardContent v-else-if="user" class="flex flex-col gap-6 p-6 sm:flex-row sm:items-center sm:justify-between">
           <div class="flex flex-col items-center gap-4 text-center sm:flex-row sm:text-left">
             <div class="flex size-20 items-center justify-center overflow-hidden rounded-full bg-muted">
-              <img v-if="user.avatar" :src="user.avatar" :alt="user.name" class="h-full w-full object-cover" />
-              <span v-else class="text-xl font-medium text-muted-foreground">ML</span>
+              <img v-if="user.avatar" :src="user.avatar" :alt="user.name || 'User'" class="h-full w-full object-cover" />
+              <span v-else class="text-xl font-medium text-muted-foreground">{{ getInitials(user.name || '') }}</span>
             </div>
             <div>
               <div class="flex items-center justify-center gap-2 sm:justify-start">
                 <h2 class="text-xl font-semibold text-foreground">
-                  {{ user.name }}
+                  {{ user.name || 'Anonymous' }}
                 </h2>
                 <Badge>
                   <Crown class="size-3 mr-1" />
@@ -45,10 +81,10 @@ const goals = [
                 </Badge>
               </div>
               <p class="mt-1 text-sm text-muted-foreground">
-                {{ user.email }}
+                {{ user.email || 'No email provided' }}
               </p>
-              <p class="mt-1 text-sm text-muted-foreground">
-                Monthly income {{ formatCurrency(user.monthlyIncome, user.currency) }}
+              <p v-if="user.monthlyIncome !== undefined" class="mt-1 text-sm text-muted-foreground">
+                Monthly income {{ formatCurrency(user.monthlyIncome, user.currency || 'USD') }}
               </p>
             </div>
           </div>
@@ -86,16 +122,17 @@ const goals = [
                   </div>
                   <div>
                     <p class="text-sm font-medium text-foreground">{{ a.name }}</p>
-                    <p class="text-xs text-muted-foreground">{{ a.type }} · {{ a.number }}</p>
+                    <p class="text-xs text-muted-foreground capitalize">{{ a.type }}</p>
                   </div>
                 </div>
                 <p :class="[
                   'text-sm font-semibold tabular-nums',
                   a.balance < 0 ? 'text-destructive' : 'text-foreground'
                 ]">
-                  {{ formatCurrency(a.balance, user.currency) }}
+                  {{ formatCurrency(a.balance, user?.currency || 'USD') }}
                 </p>
               </div>
+              <p v-if="linkedAccounts.length === 0" class="text-sm text-muted-foreground py-4 text-center">No accounts linked yet.</p>
             </CardContent>
           </Card>
 
@@ -113,16 +150,17 @@ const goals = [
                   </div>
                   <div>
                     <p class="text-sm font-medium text-foreground">{{ a.name }}</p>
-                    <p class="text-xs text-muted-foreground">{{ a.type }} · {{ a.number }}</p>
+                    <p class="text-xs text-muted-foreground capitalize">{{ a.type }}</p>
                   </div>
                 </div>
                 <p :class="[
                   'text-sm font-semibold tabular-nums',
                   a.balance < 0 ? 'text-destructive' : 'text-foreground'
                 ]">
-                  {{ formatCurrency(a.balance, user.currency) }}
+                  {{ formatCurrency(a.balance, user?.currency || 'USD') }}
                 </p>
               </div>
+              <p v-if="investmentAccounts.length === 0" class="text-sm text-muted-foreground py-4 text-center">No investment accounts linked.</p>
             </CardContent>
           </Card>
 
@@ -153,38 +191,14 @@ const goals = [
                   />
                 </div>
               </div>
+              <p v-if="goals.length === 0" class="text-sm text-muted-foreground py-2 text-center">No goals set up yet.</p>
             </CardContent>
           </Card>
 
-          <Card class="border-border bg-accent">
-            <CardHeader>
-              <CardTitle class="text-accent-foreground">
-                Subscription
-              </CardTitle>
-              <CardDescription>SmartBudget AI Premium</CardDescription>
-            </CardHeader>
-            <CardContent class="flex flex-col gap-4">
-              <div class="flex items-baseline gap-1">
-                <span class="text-2xl font-semibold text-foreground">
-                  $149
-                </span>
-                <span class="text-sm text-muted-foreground">/ month</span>
-              </div>
-              <p class="text-sm leading-relaxed text-muted-foreground">
-                Renews on October 24, 2025. Includes unlimited AI insights and
-                advanced forecasting.
-              </p>
-              <Button variant="outline" class="w-full">
-                Manage Subscription
-              </Button>
-            </CardContent>
-          </Card>
 
-          <Button variant="outline" class="w-full" as-child>
-            <RouterLink to="/login">
-              <LogOut class="mr-2 h-4 w-4" />
-              Logout
-            </RouterLink>
+          <Button variant="outline" class="w-full" @click="logout">
+            <LogOut class="mr-2 h-4 w-4" />
+            Logout
           </Button>
         </div>
       </div>

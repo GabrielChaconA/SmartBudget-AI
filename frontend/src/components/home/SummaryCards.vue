@@ -1,55 +1,80 @@
 <script setup lang="ts">
+import { ref } from 'vue'
 import {
   Wallet,
-  CreditCard,
-  PiggyBank,
-  CalendarClock,
-  ArrowUpRight,
-  ArrowDownRight,
+  Plus
 } from '@lucide/vue'
 import { Card, CardContent } from '@/components/ui/card'
-import { cn } from '@/lib/utils'
-import { summaryCards, formatCurrency, user } from '@/lib/data'
+import { Button } from '@/components/ui/button'
+import { formatCurrency } from '@/lib/data'
+import { useUser } from '@/composables/useUser'
+import CreateFundModal from './CreateFundModal.vue'
+import FundDetailsModal from './FundDetailsModal.vue'
 
-const icons = {
-  cash: Wallet,
-  expenses: CreditCard,
-  savings: PiggyBank,
-  upcoming: CalendarClock,
-} as const
+const { user } = useUser()
+
+const isCreateModalOpen = ref(false)
+const isDetailsModalOpen = ref(false)
+const selectedFund = ref(null)
+
+const openFundDetails = (fund: any) => {
+  selectedFund.value = fund
+  isDetailsModalOpen.value = true
+}
 </script>
 
 <template>
-  <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-    <Card
-      v-for="card in summaryCards"
-      :key="card.id"
-      class="border-border"
-    >
-      <CardContent class="flex flex-col gap-4 p-5">
-        <div class="flex items-center justify-between">
-          <div class="flex size-10 items-center justify-center rounded-xl bg-accent text-accent-foreground">
-            <component :is="icons[card.id as keyof typeof icons]" class="size-5" />
+  <div>
+    <div v-if="user?.funds?.length > 0" class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <Card
+        v-for="fund in user?.funds"
+        :key="fund.id"
+        class="border-border cursor-pointer hover:border-primary/50 transition-colors"
+        @click="openFundDetails(fund)"
+      >
+        <CardContent class="flex flex-col gap-4 p-5">
+          <div class="flex items-center justify-between">
+            <div class="flex size-10 items-center justify-center rounded-xl bg-accent text-accent-foreground" :style="fund.color ? { color: fund.color } : {}">
+              <Wallet class="size-5" />
+            </div>
           </div>
-          <span
-            v-if="card.change !== 0"
-            :class="cn(
-              'flex items-center gap-0.5 text-xs font-medium',
-              card.change > 0 ? 'text-success' : 'text-destructive'
-            )"
-          >
-            <ArrowUpRight v-if="card.change > 0" class="size-3.5" />
-            <ArrowDownRight v-else class="size-3.5" />
-            {{ Math.abs(card.change) }}%
-          </span>
+          <div>
+            <p class="text-sm text-muted-foreground">{{ fund.name }}</p>
+            <p class="mt-1 text-2xl font-semibold tracking-tight text-foreground">
+              {{ formatCurrency(fund.balance, user?.currency || 'MXN') }}
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
+      <!-- New Fund Card inside the grid -->
+      <Card class="border-border border-dashed cursor-pointer hover:border-primary/50 transition-colors flex items-center justify-center bg-muted/10 min-h-[140px]" @click="isCreateModalOpen = true">
+        <CardContent class="flex flex-col items-center justify-center p-5 text-center h-full w-full opacity-60 hover:opacity-100 transition-opacity">
+          <div class="flex size-10 items-center justify-center rounded-xl bg-accent mb-3 text-muted-foreground">
+            <Plus class="size-5" />
+          </div>
+          <p class="text-sm font-medium text-muted-foreground">New Fund</p>
+        </CardContent>
+      </Card>
+    </div>
+    
+    <Card v-else class="border-border border-dashed">
+      <CardContent class="flex flex-col items-center justify-center p-8 text-center">
+        <div class="flex size-12 items-center justify-center rounded-full bg-accent mb-4">
+          <Wallet class="size-6 text-muted-foreground" />
         </div>
-        <div>
-          <p class="text-sm text-muted-foreground">{{ card.title }}</p>
-          <p class="mt-1 text-2xl font-semibold tracking-tight text-foreground">
-            {{ formatCurrency(card.value, user.currency) }}
-          </p>
-        </div>
+        <h3 class="text-lg font-medium text-foreground">No funds created yet</h3>
+        <p class="mt-2 text-sm text-muted-foreground max-w-sm mb-4">
+          Create pockets of money to organize your finances.
+        </p>
+        <Button variant="outline" @click="isCreateModalOpen = true">
+          <Plus class="size-4 mr-2" />
+          Create Fund
+        </Button>
       </CardContent>
     </Card>
+
+    <CreateFundModal v-model:open="isCreateModalOpen" />
+    <FundDetailsModal v-model:open="isDetailsModalOpen" :fund="selectedFund" />
   </div>
 </template>

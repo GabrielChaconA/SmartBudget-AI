@@ -2,7 +2,22 @@
 import { TrendingUp } from '@lucide/vue'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { netWorth, formatCurrency, user } from '@/lib/data'
+import { useUser } from '@/composables/useUser'
+import { computed } from 'vue'
+import { netWorth, formatCurrency } from '@/lib/data'
+
+const { user } = useUser()
+
+const totalBalance = computed(() => {
+  let sum = 0
+  if (user.value?.accounts) {
+    sum += user.value.accounts.reduce((acc: number, a: any) => acc + parseFloat(a.balance), 0)
+  }
+  if (user.value?.funds) {
+    sum += user.value.funds.reduce((acc: number, f: any) => acc + parseFloat(f.balance), 0)
+  }
+  return sum
+})
 </script>
 
 <template>
@@ -13,14 +28,14 @@ import { netWorth, formatCurrency, user } from '@/lib/data'
           Total Net Worth
         </p>
         <p class="mt-2 text-4xl font-semibold tracking-tight sm:text-5xl">
-          {{ formatCurrency(netWorth.total, user.currency) }}
+          {{ formatCurrency(totalBalance, user?.currency || 'MXN') }}
         </p>
         <div class="mt-4 flex flex-wrap items-center gap-2">
           <Badge class="border-0 bg-primary-foreground/15 text-primary-foreground">
             <TrendingUp class="size-3.5 mr-1" />+{{ netWorth.changePercent }}%
           </Badge>
           <span class="text-sm text-primary-foreground/80">
-            +{{ formatCurrency(netWorth.changeAmount, user.currency) }} today
+            +{{ formatCurrency(netWorth.changeAmount, user?.currency || 'MXN') }} today
           </span>
         </div>
       </div>

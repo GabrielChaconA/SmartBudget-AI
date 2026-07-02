@@ -9,7 +9,7 @@ import {
   LegendComponent
 } from 'echarts/components'
 import { CanvasRenderer } from 'echarts/renderers'
-import VChart, { THEME_KEY } from 'vue-echarts'
+import VChart from 'vue-echarts'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 
 echarts.use([

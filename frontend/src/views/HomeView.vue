@@ -4,7 +4,9 @@ import NetWorthCard from '@/components/home/NetWorthCard.vue'
 import SummaryCards from '@/components/home/SummaryCards.vue'
 import UpcomingPayments from '@/components/home/UpcomingPayments.vue'
 import AiInsightCard from '@/components/home/AiInsightCard.vue'
-import { user } from '@/lib/data'
+import { useUser } from '@/composables/useUser'
+
+const { user } = useUser()
 </script>
 
 <template>
@@ -12,7 +14,7 @@ import { user } from '@/lib/data'
     <div class="mx-auto flex max-w-6xl flex-col gap-6">
       <div>
         <h1 class="text-2xl font-semibold tracking-tight text-foreground">
-          Good morning, {{ user.name.split(" ")[0] }}
+          Good morning, {{ user?.name ? user.name.split(" ")[0] : 'Guest' }}
         </h1>
         <p class="mt-1 text-sm text-muted-foreground">
           Here's a clear look at your finances today.

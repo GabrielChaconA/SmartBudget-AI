@@ -10,15 +10,29 @@ import {
   Sparkles,
   CreditCard,
   TrendingUp,
+  LogOut
 } from '@lucide/vue'
 
 import { cn } from "@/lib/utils"
 import Logo from "@/components/Logo.vue"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
-import { user } from "@/lib/data"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { useUser } from '@/composables/useUser'
+import { useAuth } from '@/composables/useAuth'
+import { useRouter } from 'vue-router'
 
 const route = useRoute()
+const router = useRouter()
+const { user } = useUser()
+const { logout } = useAuth()
 
 const navItems = [
   { href: "/", label: "Home", short: "Home", icon: LayoutDashboard },
@@ -55,17 +69,6 @@ const isActive = (href: string) => route.path === href
           {{ item.label }}
         </RouterLink>
       </nav>
-      <div class="mt-auto rounded-2xl border border-border bg-accent p-4">
-        <p class="text-sm font-semibold text-accent-foreground">
-          AI Premium
-        </p>
-        <p class="mt-1 text-xs leading-relaxed text-muted-foreground">
-          Unlock deeper forecasts and unlimited insights.
-        </p>
-        <Button size="sm" class="mt-3 w-full">
-          Upgrade
-        </Button>
-      </div>
     </aside>
 
     <div class="lg:pl-64">
@@ -92,29 +95,40 @@ const isActive = (href: string) => route.path === href
             <Bell class="size-5" />
             <span class="absolute right-2 top-2 size-2 rounded-full bg-primary ring-2 ring-background" />
           </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            class="rounded-xl"
-            aria-label="Settings"
-          >
-            <Settings class="size-5" />
-          </Button>
-          <RouterLink
-            to="/profile"
-            class="ml-1 flex items-center gap-2 rounded-xl p-1 hover:bg-muted"
-          >
-            <Avatar class="size-9">
-              <AvatarImage :src="user.avatar" :alt="user.name" />
-              <AvatarFallback>ML</AvatarFallback>
-            </Avatar>
-            <div class="hidden pr-2 text-left sm:block">
-              <p class="text-sm font-medium leading-none text-foreground">
-                {{ user.name }}
-              </p>
-              <p class="mt-1 text-xs text-muted-foreground">Premium</p>
-            </div>
-          </RouterLink>
+
+          <DropdownMenu v-if="user">
+            <DropdownMenuTrigger as-child>
+              <button class="ml-1 flex items-center gap-2 rounded-xl p-1 hover:bg-muted outline-none">
+                <Avatar class="size-9">
+                  <AvatarImage :src="user?.avatar || ''" :alt="user?.name || 'User'" />
+                  <AvatarFallback>{{ user?.name ? user.name.substring(0, 2).toUpperCase() : 'ML' }}</AvatarFallback>
+                </Avatar>
+                <div class="hidden pr-2 text-left sm:block">
+                  <p class="text-sm font-medium leading-none text-foreground">
+                    {{ user.name || 'Anonymous' }}
+                  </p>
+                  <p class="mt-1 text-xs text-muted-foreground">Premium</p>
+                </div>
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" class="w-56">
+              <DropdownMenuLabel>My Account</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem @click="router.push('/profile')" class="cursor-pointer">
+                <User class="mr-2 size-4" />
+                <span>Profile</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem class="cursor-pointer">
+                <Settings class="mr-2 size-4" />
+                <span>Settings</span>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem @click="logout" class="cursor-pointer text-destructive focus:text-destructive">
+                <LogOut class="mr-2 size-4" />
+                <span>Log out</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </header>
 

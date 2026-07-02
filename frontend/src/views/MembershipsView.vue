@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { computed, ref } from 'vue'
 import { Bell, BellOff, CreditCard, CalendarClock } from '@lucide/vue'
 import DashboardLayout from '@/components/DashboardLayout.vue'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -7,34 +7,66 @@ import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
-import { memberships as initialMemberships, formatCurrency } from '@/lib/data'
+import { useUser } from '@/composables/useUser'
+import { formatCurrency } from '@/lib/data'
+import AddSubscriptionModal from '@/components/AddSubscriptionModal.vue'
 
-const memberships = ref(initialMemberships)
+const { user } = useUser()
+const isAddModalOpen = ref(false)
 
-function toggleNotify(id: string) {
-  const m = memberships.value.find(x => x.id === id)
-  if (m) m.notify = !m.notify
+const notifyState = ref<Record<number, boolean>>({})
+
+function getNotifyState(id: number) {
+  if (notifyState.value[id] === undefined) {
+    notifyState.value[id] = true // default true
+  }
+  return notifyState.value[id]
 }
 
-const active = computed(() => memberships.value.filter(m => m.active))
-const inactive = computed(() => memberships.value.filter(m => !m.active))
+// Mapeamos los datos de la BD a la estructura que espera la vista
+const memberships = computed(() => {
+  if (!user.value?.subscriptions) return []
+  return user.value.subscriptions.map((s: any) => ({
+    id: s.id,
+    name: s.name,
+    active: s.status === 'active',
+    cycle: s.billing_cycle === 'yearly' ? 'Yearly' : 'Monthly',
+    notify: getNotifyState(s.id),
+    amount: parseFloat(s.amount),
+    category: s.category || 'Subscription',
+    plan: 'Standard',
+    nextCharge: s.next_billing_date
+  }))
+})
+
+function toggleNotify(id: number) {
+  notifyState.value[id] = !getNotifyState(id)
+}
+
+const active = computed(() => memberships.value.filter((m: any) => m.active))
+const inactive = computed(() => memberships.value.filter((m: any) => !m.active))
 
 const monthlyTotal = computed(() => 
-  active.value.reduce((sum, m) => sum + (m.cycle === 'Yearly' ? m.amount / 12 : m.amount), 0)
+  active.value.reduce((sum: number, m: any) => sum + (m.cycle === 'Yearly' ? m.amount / 12 : m.amount), 0)
 )
-const notifyCount = computed(() => active.value.filter(m => m.notify).length)
+const notifyCount = computed(() => active.value.filter((m: any) => m.notify).length)
 </script>
 
 <template>
   <DashboardLayout>
     <div class="mx-auto max-w-5xl">
-      <header class="pb-6">
-        <h1 class="text-2xl font-semibold tracking-tight text-foreground">
-          Active Memberships
-        </h1>
-        <p class="mt-1 text-sm text-muted-foreground">
-          Manage your subscriptions and choose which ones send you payment reminders.
-        </p>
+      <header class="pb-6 flex items-center justify-between">
+        <div>
+          <h1 class="text-2xl font-semibold tracking-tight text-foreground">
+            Active Memberships
+          </h1>
+          <p class="mt-1 text-sm text-muted-foreground">
+            Manage your subscriptions and choose which ones send you payment reminders.
+          </p>
+        </div>
+        <Button class="bg-green-600 hover:bg-green-700 text-white rounded-full px-6" @click="isAddModalOpen = true">
+          Add Subscription
+        </Button>
       </header>
 
       <!-- Summary -->
@@ -131,6 +163,7 @@ const notifyCount = computed(() => active.value.filter(m => m.notify).length)
                     :checked="m.notify"
                     @update:checked="toggleNotify(m.id)"
                     :aria-label="`Toggle notifications for ${m.name}`"
+                    class="data-[state=checked]:bg-green-500"
                   />
                 </div>
               </div>
@@ -168,6 +201,8 @@ const notifyCount = computed(() => active.value.filter(m => m.notify).length)
           </CardContent>
         </Card>
       </section>
+      
+      <AddSubscriptionModal v-model:open="isAddModalOpen" />
     </div>
   </DashboardLayout>
 </template>

@@ -113,8 +113,7 @@ const fetchData = async () => {
         { value: Math.round(stockValue), name: 'Stocks', itemStyle: { color: '#22c55e' } }
       ]
     }
-  } catch(e) {
-    console.error(e)
+  } catch {
     isError.value = true
   } finally {
     isLoading.value = false
