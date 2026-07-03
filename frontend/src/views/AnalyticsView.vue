@@ -1,13 +1,11 @@
 <script setup lang="ts">
 import DashboardLayout from '@/components/DashboardLayout.vue'
 import AnalyticsFilters from '@/components/analytics/AnalyticsFilters.vue'
-import NetWorthChart from '@/components/analytics/NetWorthChart.vue'
-import IncomeExpenseChart from '@/components/analytics/IncomeExpenseChart.vue'
-import BudgetAllocation from '@/components/analytics/BudgetAllocation.vue'
-import TopSpendingCategories from '@/components/analytics/TopSpendingCategories.vue'
-import InvestmentAllocation from '@/components/analytics/InvestmentAllocation.vue'
-import MonthlySavingsRate from '@/components/analytics/MonthlySavingsRate.vue'
-import RecentTransactions from '@/components/analytics/RecentTransactions.vue'
+import TotalWealthAllocation from '@/components/analytics/TotalWealthAllocation.vue'
+import FundsVsFreeAllocation from '@/components/analytics/FundsVsFreeAllocation.vue'
+import InvestmentPerformanceChart from '@/components/analytics/InvestmentPerformanceChart.vue'
+import MonthlySubscriptionsChart from '@/components/analytics/MonthlySubscriptionsChart.vue'
+import AllFundsAllocation from '@/components/analytics/AllFundsAllocation.vue'
 </script>
 
 <template>
@@ -26,27 +24,23 @@ import RecentTransactions from '@/components/analytics/RecentTransactions.vue'
       <!-- Filters -->
       <AnalyticsFilters />
 
-      <!-- Row 1: Net Worth & Income vs Expenses -->
+      <!-- Gráficas Pequeñas (Máximo 2 juntas en PC) -->
       <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <NetWorthChart />
-        <IncomeExpenseChart />
+        <TotalWealthAllocation />
+        <FundsVsFreeAllocation />
       </div>
 
-      <!-- Row 2: Budget Allocation & Top Spending Categories -->
-      <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <BudgetAllocation />
-        <TopSpendingCategories />
+      <!-- Gráficas Grandes (1 por fila abajo) -->
+      <div class="grid grid-cols-1 gap-6">
+        <AllFundsAllocation />
       </div>
 
-      <!-- Row 3: Investment Allocation & Monthly Savings Rate -->
-      <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <InvestmentAllocation />
-        <MonthlySavingsRate />
+      <div class="grid grid-cols-1 gap-6">
+        <InvestmentPerformanceChart />
       </div>
 
-      <!-- Row 4: Recent Transactions -->
-      <div class="grid grid-cols-1">
-        <RecentTransactions />
+      <div class="grid grid-cols-1 gap-6">
+        <MonthlySubscriptionsChart />
       </div>
     </div>
   </DashboardLayout>

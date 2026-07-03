@@ -1,4 +1,4 @@
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import axios from 'axios';
 
 export interface UserProfile {
@@ -216,6 +216,33 @@ export function useUser() {
     return isBalancesVisible.value && !hiddenBalances.value[id];
   };
 
+  const freeMoney = computed(() => {
+    if (!user.value?.accounts) return 0;
+    const accTotal = user.value.accounts.reduce((sum: number, a: any) => sum + parseFloat(a.balance), 0);
+    const fundTotal = user.value?.funds ? user.value.funds.reduce((sum: number, f: any) => sum + parseFloat(f.balance), 0) : 0;
+    return accTotal - fundTotal;
+  });
+
+  const totalFundsAmount = computed(() => {
+    if (!user.value?.funds) return 0;
+    return user.value.funds.reduce((sum: number, f: any) => sum + parseFloat(f.balance), 0);
+  });
+
+  const totalSubscriptionsAmount = computed(() => {
+    if (!user.value?.subscriptions) return 0;
+    return user.value.subscriptions
+      .filter((s: any) => s.status !== 'inactive')
+      .reduce((sum: number, s: any) => sum + (s.billing_cycle === 'yearly' ? parseFloat(s.amount) / 12 : parseFloat(s.amount)), 0);
+  });
+  
+  const totalInvestmentsAmount = computed(() => {
+    if (!user.value?.investments) return 0;
+    // Simplistic sum of quantities; ideally this uses market values but for analytics it's a proxy.
+    // In InvestmentsView we fetch quotes, but here we can just use the base quantity for a rough estimate,
+    // or just return 0 if not calculated yet.
+    return user.value.investments.reduce((sum: number, i: any) => sum + parseFloat(i.quantity), 0);
+  });
+
   return {
     user,
     isLoading,
@@ -233,6 +260,10 @@ export function useUser() {
     addSubscription,
     updateProfile,
     uploadAvatar,
-    addInvestment
+    addInvestment,
+    freeMoney,
+    totalFundsAmount,
+    totalSubscriptionsAmount,
+    totalInvestmentsAmount
   };
 }

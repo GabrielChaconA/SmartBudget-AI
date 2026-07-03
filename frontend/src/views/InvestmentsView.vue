@@ -296,7 +296,13 @@ const chartOption = ref({
           </CardContent>
         </Card>
 
-        <Card class="border-border cursor-pointer hover:border-primary/50 transition-colors group" @click="isAddModalOpen = true">
+        <Card 
+          :class="[
+            'border-border transition-colors',
+            activeCat !== 'all' ? 'cursor-pointer hover:border-primary/50 group' : ''
+          ]" 
+          @click="activeCat !== 'all' ? isAddModalOpen = true : null"
+        >
           <CardHeader>
             <div class="flex items-center justify-between">
               <CardTitle class="text-base flex items-center gap-2">
@@ -306,34 +312,56 @@ const chartOption = ref({
                   <EyeOff v-else class="size-3" />
                 </Button>
               </CardTitle>
-              <div class="flex size-6 items-center justify-center rounded bg-primary text-primary-foreground opacity-0 group-hover:opacity-100 transition-opacity">
+              <div v-if="activeCat !== 'all'" class="flex size-6 items-center justify-center rounded bg-primary text-primary-foreground opacity-0 group-hover:opacity-100 transition-opacity">
                 <Plus class="size-4" />
               </div>
             </div>
-            <CardDescription>Portfolio breakdown. Click to add.</CardDescription>
+            <CardDescription>Portfolio breakdown.{{ activeCat !== 'all' ? ' Click to add.' : '' }}</CardDescription>
           </CardHeader>
           <CardContent class="flex flex-col gap-3">
-            <div v-for="cat in activeCategories.filter(c => c.id !== 'all' && c.value > 0)" :key="cat.id" class="flex items-center justify-between">
-              <span class="text-sm text-muted-foreground flex items-center gap-2">
-                <component :is="categoryIcons[cat.id]" class="size-4" />
-                {{ cat.label }}
-              </span>
-              <span class="font-semibold tabular-nums text-foreground">
-                <span v-if="isItemVisible('invest_summary')">{{ formatCurrency(cat.value, user?.currency || 'MXN') }}</span>
-                <span v-else>••••••</span>
-              </span>
-            </div>
-            
-            <div v-if="activeCategories.filter(c => c.id !== 'all' && c.value > 0).length === 0" class="text-sm text-muted-foreground text-center py-2">
-              No active investments
-            </div>
+            <template v-if="activeCat === 'all'">
+              <div v-for="cat in activeCategories.filter(c => c.id !== 'all' && c.value > 0)" :key="cat.id" class="flex items-center justify-between">
+                <span class="text-sm text-muted-foreground flex items-center gap-2">
+                  <component :is="categoryIcons[cat.id]" class="size-4" />
+                  {{ cat.label }}
+                </span>
+                <span class="font-semibold tabular-nums text-foreground">
+                  <span v-if="isItemVisible('invest_summary')">{{ formatCurrency(cat.value, user?.currency || 'MXN') }}</span>
+                  <span v-else>••••••</span>
+                </span>
+              </div>
+              
+              <div v-if="activeCategories.filter(c => c.id !== 'all' && c.value > 0).length === 0" class="text-sm text-muted-foreground text-center py-2">
+                No active investments
+              </div>
+            </template>
+            <template v-else>
+              <div v-for="h in holdings" :key="h.id" class="flex items-center justify-between">
+                <span class="text-sm text-muted-foreground flex items-center gap-2">
+                  <div class="flex size-5 items-center justify-center rounded overflow-hidden bg-accent">
+                    <AssetLogo :symbol="h.ticker" :fallback-icon="h.returnPercent >= 0 ? TrendingUp : TrendingDown" />
+                  </div>
+                  {{ h.name }}
+                </span>
+                <span class="font-semibold tabular-nums text-foreground">
+                  <span v-if="isItemVisible('invest_summary')">{{ formatCurrency(h.value, user?.currency || 'MXN') }}</span>
+                  <span v-else>••••••</span>
+                </span>
+              </div>
+              
+              <div v-if="holdings.length === 0" class="text-sm text-muted-foreground text-center py-2">
+                No active investments in this category
+              </div>
+            </template>
             
             <div class="h-px w-full bg-border my-1"></div>
             
             <div class="flex items-center justify-between">
               <span class="text-sm font-medium text-foreground">Total</span>
               <span class="font-bold tabular-nums text-primary">
-                <span v-if="isItemVisible('invest_summary')">{{ formatCurrency(totalPortfolioValue, user?.currency || 'MXN') }}</span>
+                <span v-if="isItemVisible('invest_summary')">
+                  {{ formatCurrency(activeCat === 'all' ? totalPortfolioValue : (activeCategories.find(c => c.id === activeCat)?.value || 0), user?.currency || 'MXN') }}
+                </span>
                 <span v-else>••••••</span>
               </span>
             </div>

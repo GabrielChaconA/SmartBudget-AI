@@ -32,7 +32,7 @@ const emit = defineEmits<{
   'update:open': [value: boolean]
 }>()
 
-const { updateFund, allocateFund, fetchIncomeStats, user } = useUser()
+const { updateFund, allocateFund, fetchIncomeStats, user, freeMoney } = useUser()
 
 const isEditingTotal = ref(false)
 const editBalance = ref(0)
@@ -81,13 +81,22 @@ watch(() => props.fund, (newFund) => {
   }
 })
 
+const maxAllowedBalance = computed(() => {
+  if (!props.fund) return 0
+  return parseFloat(props.fund.balance) + freeMoney.value
+})
+
+const isOverLimit = computed(() => {
+  return editBalance.value > maxAllowedBalance.value
+})
+
 const totalAllocated = computed(() => {
   if (!props.fund?.allocations) return 0
   return props.fund.allocations.reduce((sum: number, a: any) => sum + parseFloat(a.amount), 0)
 })
 
 const handleSaveTotal = async () => {
-  if (!props.fund) return
+  if (!props.fund || isOverLimit.value) return
   isSubmitting.value = true
   const success = await updateFund(props.fund.id, { balance: editBalance.value })
   if (success) {
@@ -162,17 +171,25 @@ const chartOption = computed(() => {
               </Button>
             </div>
             
-            <div v-if="isEditingTotal" class="flex items-center gap-2">
-              <Input type="number" v-model="editBalance" class="w-full" step="0.01" />
-              <Button size="icon" variant="default" @click="handleSaveTotal" :disabled="isSubmitting">
-                <Check class="size-4" />
-              </Button>
-              <Button size="icon" variant="ghost" @click="isEditingTotal = false">
-                <X class="size-4" />
-              </Button>
+            <div v-if="isEditingTotal" class="flex flex-col gap-2">
+              <div class="flex items-center gap-2">
+                <Input type="number" v-model="editBalance" class="w-full" step="0.01" />
+                <Button size="icon" variant="default" @click="handleSaveTotal" :disabled="isSubmitting || isOverLimit">
+                  <Check class="size-4" />
+                </Button>
+                <Button size="icon" variant="ghost" @click="isEditingTotal = false">
+                  <X class="size-4" />
+                </Button>
+              </div>
+              <p v-if="isOverLimit" class="text-xs text-destructive">
+                Cannot exceed free money limit ({{ formatCurrency(maxAllowedBalance, user?.currency) }})
+              </p>
             </div>
             <div v-else>
               <p class="text-3xl font-bold">{{ formatCurrency(fund.balance, user?.currency) }}</p>
+              <p class="mt-2 text-xs font-medium text-muted-foreground flex items-center gap-1">
+                Disponible para agregar: <span class="text-foreground">{{ formatCurrency(freeMoney, user?.currency) }}</span> de dinero libre
+              </p>
             </div>
           </div>
 
