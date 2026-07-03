@@ -2,7 +2,9 @@
 import { ref } from 'vue'
 import {
   Wallet,
-  Plus
+  Plus,
+  Eye,
+  EyeOff
 } from '@lucide/vue'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -11,7 +13,7 @@ import { useUser } from '@/composables/useUser'
 import CreateFundModal from './CreateFundModal.vue'
 import FundDetailsModal from './FundDetailsModal.vue'
 
-const { user } = useUser()
+const { user, isBalancesVisible, isItemVisible, toggleItemVisibility } = useUser()
 
 const isCreateModalOpen = ref(false)
 const isDetailsModalOpen = ref(false)
@@ -59,11 +61,16 @@ const openFundDetails = (fund: any) => {
             <div class="flex size-10 items-center justify-center rounded-xl bg-accent text-accent-foreground" :style="fund.color ? { color: fund.color } : {}">
               <Wallet class="size-5" />
             </div>
+            <Button variant="ghost" size="icon" @click.stop="toggleItemVisibility(`fund_${fund.id}`)" class="h-8 w-8 text-muted-foreground hover:text-foreground">
+              <Eye v-if="isItemVisible(`fund_${fund.id}`)" class="size-4" />
+              <EyeOff v-else class="size-4" />
+            </Button>
           </div>
           <div>
             <p class="text-sm text-muted-foreground">{{ fund.name }}</p>
             <p class="mt-1 text-2xl font-semibold tracking-tight text-foreground">
-              {{ formatCurrency(fund.balance, user?.currency || 'MXN') }}
+              <span v-if="isItemVisible(`fund_${fund.id}`)">{{ formatCurrency(fund.balance, user?.currency || 'MXN') }}</span>
+              <span v-else>••••••</span>
             </p>
           </div>
         </CardContent>

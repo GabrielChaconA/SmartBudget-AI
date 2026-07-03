@@ -16,6 +16,8 @@ const user = ref<UserProfile | null>(null);
 const isLoading = ref(false);
 const error = ref<string | null>(null);
 const isInitialized = ref(false);
+const isBalancesVisible = ref(true);
+const hiddenBalances = ref<Record<string, boolean>>({});
 
 export function clearUserCache() {
   user.value = null;
@@ -202,10 +204,26 @@ export function useUser() {
     fetchUser();
   });
 
+  const toggleBalances = () => {
+    isBalancesVisible.value = !isBalancesVisible.value;
+  };
+
+  const toggleItemVisibility = (id: string) => {
+    hiddenBalances.value[id] = !hiddenBalances.value[id];
+  };
+
+  const isItemVisible = (id: string) => {
+    return isBalancesVisible.value && !hiddenBalances.value[id];
+  };
+
   return {
     user,
     isLoading,
     error,
+    isBalancesVisible,
+    toggleBalances,
+    toggleItemVisibility,
+    isItemVisible,
     fetchUser,
     createFund,
     updateFund,

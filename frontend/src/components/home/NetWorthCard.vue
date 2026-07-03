@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { TrendingUp, TrendingDown, RefreshCw } from '@lucide/vue'
+import { TrendingUp, TrendingDown, RefreshCw, Eye, EyeOff } from '@lucide/vue'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { useUser } from '@/composables/useUser'
@@ -13,7 +13,7 @@ import VChart from 'vue-echarts'
 
 use([CanvasRenderer, LineChart, GridComponent, TooltipComponent])
 
-const { user } = useUser()
+const { user, isBalancesVisible, isItemVisible, toggleItemVisibility } = useUser()
 
 const displayCurrency = ref(user.value?.currency || 'MXN')
 
@@ -165,6 +165,13 @@ const chartOption = computed(() => ({
             Total Net Worth
           </p>
           <button 
+            @click.stop="toggleItemVisibility('networth')" 
+            class="text-primary-foreground/60 hover:text-primary-foreground transition-colors"
+          >
+            <Eye v-if="isItemVisible('networth')" class="size-4" />
+            <EyeOff v-else class="size-4" />
+          </button>
+          <button 
             @click="toggleCurrency"
             class="flex items-center justify-center gap-1 rounded-full bg-primary-foreground/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white transition-colors hover:bg-primary-foreground/30"
           >
@@ -173,7 +180,8 @@ const chartOption = computed(() => ({
           </button>
         </div>
         <p class="mt-1 text-3xl font-semibold tracking-tight sm:text-5xl">
-          {{ formatCurrency(totalBalance, displayCurrency) }}
+          <span v-if="isItemVisible('networth')">{{ formatCurrency(totalBalance, displayCurrency) }}</span>
+          <span v-else>••••••</span>
         </p>
         <div class="mt-2 sm:mt-4 flex flex-wrap items-center gap-2">
           <Badge class="border-0 bg-primary-foreground/15 text-primary-foreground">
@@ -182,7 +190,8 @@ const chartOption = computed(() => ({
             {{ isPositive ? '+' : '' }}{{ changePercent.toFixed(2) }}%
           </Badge>
           <span class="text-sm text-primary-foreground/80">
-            {{ isPositive ? '+' : '' }}{{ formatCurrency(changeAmount, displayCurrency) }} today
+            <span v-if="isItemVisible('networth')">{{ isPositive ? '+' : '' }}{{ formatCurrency(changeAmount, displayCurrency) }}</span>
+            <span v-else>••••</span> today
           </span>
         </div>
       </div>
