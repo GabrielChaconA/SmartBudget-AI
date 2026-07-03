@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
-import { TrendingUp, TrendingDown, Layers, Building2, Bitcoin, Dices, ArrowUpRight, ArrowDownRight, RefreshCw, AlertCircle, Plus } from '@lucide/vue'
+import { TrendingUp, TrendingDown, Layers, Building2, Bitcoin, Dices, ArrowUpRight, ArrowDownRight, RefreshCw, AlertCircle, Plus, Eye, EyeOff } from '@lucide/vue'
 import DashboardLayout from '@/components/DashboardLayout.vue'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -29,7 +29,7 @@ const categoryIcons: Record<string, any> = {
   bets: Dices,
 }
 
-const { user } = useUser()
+const { user, isBalancesVisible, toggleBalances, isItemVisible, toggleItemVisibility } = useUser()
 const router = useRouter()
 
 const isAddModalOpen = ref(false)
@@ -265,8 +265,13 @@ const chartOption = ref({
           <CardHeader class="flex-row items-start justify-between space-y-0">
             <div>
               <CardDescription>{{ activeCat === 'all' ? 'Total portfolio value' : activeCategories.find(c => c.id === activeCat)?.label + ' Value' }}</CardDescription>
-              <CardTitle class="text-3xl">
-                {{ formatCurrency(totalPortfolioValue, user?.currency || 'MXN') }}
+              <CardTitle class="text-3xl flex items-center gap-2">
+                <span v-if="isItemVisible('invest_total')">{{ formatCurrency(activeCategories.find(c => c.id === activeCat)?.value || 0, user?.currency || 'MXN') }}</span>
+                <span v-else>••••••</span>
+                <Button variant="ghost" size="icon" @click.stop="toggleItemVisibility('invest_total')" class="h-8 w-8 text-muted-foreground hover:text-foreground">
+                  <Eye v-if="isItemVisible('invest_total')" class="size-4" />
+                  <EyeOff v-else class="size-4" />
+                </Button>
               </CardTitle>
               <div class="mt-2 flex items-center gap-3">
                 <span :class="[
@@ -294,30 +299,42 @@ const chartOption = ref({
         <Card class="border-border cursor-pointer hover:border-primary/50 transition-colors group" @click="isAddModalOpen = true">
           <CardHeader>
             <div class="flex items-center justify-between">
-              <CardTitle class="text-base">Summary</CardTitle>
+              <CardTitle class="text-base flex items-center gap-2">
+                Summary
+                <Button variant="ghost" size="icon" @click.stop="toggleItemVisibility('invest_summary')" class="h-6 w-6 text-muted-foreground hover:text-foreground">
+                  <Eye v-if="isItemVisible('invest_summary')" class="size-3" />
+                  <EyeOff v-else class="size-3" />
+                </Button>
+              </CardTitle>
               <div class="flex size-6 items-center justify-center rounded bg-primary text-primary-foreground opacity-0 group-hover:opacity-100 transition-opacity">
                 <Plus class="size-4" />
               </div>
             </div>
-            <CardDescription>Capital and gains. Click to add.</CardDescription>
+            <CardDescription>Portfolio breakdown. Click to add.</CardDescription>
           </CardHeader>
-          <CardContent class="flex flex-col gap-4">
-            <div class="flex items-center justify-between">
-              <span class="text-sm text-muted-foreground">Invested</span>
+          <CardContent class="flex flex-col gap-3">
+            <div v-for="cat in activeCategories.filter(c => c.id !== 'all' && c.value > 0)" :key="cat.id" class="flex items-center justify-between">
+              <span class="text-sm text-muted-foreground flex items-center gap-2">
+                <component :is="categoryIcons[cat.id]" class="size-4" />
+                {{ cat.label }}
+              </span>
               <span class="font-semibold tabular-nums text-foreground">
-                {{ formatCurrency(totalPortfolioValue, user?.currency || 'MXN') }}
+                <span v-if="isItemVisible('invest_summary')">{{ formatCurrency(cat.value, user?.currency || 'MXN') }}</span>
+                <span v-else>••••••</span>
               </span>
             </div>
-            <div class="flex items-center justify-between">
-              <span class="text-sm text-muted-foreground">Current value</span>
-              <span class="font-semibold tabular-nums text-foreground">
-                {{ formatCurrency(totalPortfolioValue, user?.currency || 'MXN') }}
-              </span>
+            
+            <div v-if="activeCategories.filter(c => c.id !== 'all' && c.value > 0).length === 0" class="text-sm text-muted-foreground text-center py-2">
+              No active investments
             </div>
+            
+            <div class="h-px w-full bg-border my-1"></div>
+            
             <div class="flex items-center justify-between">
-              <span class="text-sm text-muted-foreground">Total gain</span>
-              <span class="font-semibold tabular-nums text-primary">
-                {{ formatCurrency(0, user?.currency || 'MXN') }}
+              <span class="text-sm font-medium text-foreground">Total</span>
+              <span class="font-bold tabular-nums text-primary">
+                <span v-if="isItemVisible('invest_summary')">{{ formatCurrency(totalPortfolioValue, user?.currency || 'MXN') }}</span>
+                <span v-else>••••••</span>
               </span>
             </div>
           </CardContent>
@@ -357,8 +374,15 @@ const chartOption = ref({
               </span>
             </div>
             <p class="mt-3 text-sm text-muted-foreground">{{ cat.label }}</p>
-            <p class="text-lg font-semibold text-foreground">
-              {{ formatCurrency(cat.value, user?.currency || 'MXN') }}
+            <p class="text-lg font-semibold text-foreground flex items-center justify-between">
+              <span>
+                <span v-if="isItemVisible('invest_cat_' + cat.id)">{{ formatCurrency(cat.value, user?.currency || 'MXN') }}</span>
+                <span v-else>••••••</span>
+              </span>
+              <button @click.stop="toggleItemVisibility('invest_cat_' + cat.id)" class="text-muted-foreground hover:text-foreground">
+                <Eye v-if="isItemVisible('invest_cat_' + cat.id)" class="size-4" />
+                <EyeOff v-else class="size-4" />
+              </button>
             </p>
           </button>
         </div>
@@ -393,7 +417,8 @@ const chartOption = ref({
               </div>
               <div class="text-right">
                 <p class="font-semibold text-foreground tabular-nums">
-                  {{ formatCurrency(h.value, user?.currency || 'MXN') }}
+                  <span v-if="isItemVisible('invest_cat_' + activeCat)">{{ formatCurrency(h.value, user?.currency || 'MXN') }}</span>
+                  <span v-else>••••••</span>
                 </p>
                 <div class="flex items-center justify-end gap-2">
                   <span :class="[

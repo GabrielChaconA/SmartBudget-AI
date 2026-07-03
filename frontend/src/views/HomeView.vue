@@ -6,20 +6,28 @@ import InvestmentsCard from '@/components/home/InvestmentsCard.vue'
 import UpcomingPayments from '@/components/home/UpcomingPayments.vue'
 import AiInsightCard from '@/components/home/AiInsightCard.vue'
 import { useUser } from '@/composables/useUser'
+import { Eye, EyeOff } from '@lucide/vue'
+import { Button } from '@/components/ui/button'
 
-const { user } = useUser()
+const { user, isBalancesVisible, toggleBalances } = useUser()
 </script>
 
 <template>
   <DashboardLayout>
     <div class="mx-auto flex max-w-6xl flex-col gap-6">
-      <div>
-        <h1 class="text-2xl font-semibold tracking-tight text-foreground">
-          Good morning, {{ user?.name ? user.name.split(" ")[0] : 'Guest' }}
-        </h1>
-        <p class="mt-1 text-sm text-muted-foreground">
-          Here's a clear look at your finances today.
-        </p>
+      <div class="flex items-center justify-between">
+        <div>
+          <h1 class="text-2xl font-semibold tracking-tight text-foreground">
+            Good morning, {{ user?.name ? user.name.split(" ")[0] : 'Guest' }}
+          </h1>
+          <p class="mt-1 text-sm text-muted-foreground">
+            Here's a clear look at your finances today.
+          </p>
+        </div>
+        <Button variant="ghost" size="icon" @click="toggleBalances" class="text-muted-foreground hover:text-foreground">
+          <Eye v-if="isBalancesVisible" class="size-5" />
+          <EyeOff v-else class="size-5" />
+        </Button>
       </div>
 
       <NetWorthCard />
