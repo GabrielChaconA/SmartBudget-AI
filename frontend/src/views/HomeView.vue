@@ -2,6 +2,7 @@
 import DashboardLayout from '@/components/DashboardLayout.vue'
 import NetWorthCard from '@/components/home/NetWorthCard.vue'
 import SummaryCards from '@/components/home/SummaryCards.vue'
+import InvestmentsCard from '@/components/home/InvestmentsCard.vue'
 import UpcomingPayments from '@/components/home/UpcomingPayments.vue'
 import AiInsightCard from '@/components/home/AiInsightCard.vue'
 import { useUser } from '@/composables/useUser'
@@ -22,7 +23,15 @@ const { user } = useUser()
       </div>
 
       <NetWorthCard />
-      <SummaryCards />
+      
+      <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <div class="lg:col-span-3">
+          <SummaryCards />
+        </div>
+        <div class="lg:col-span-1">
+          <InvestmentsCard />
+        </div>
+      </div>
 
       <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div class="lg:col-span-2">

@@ -130,6 +130,25 @@ export function useUser() {
     }
   };
 
+  const addInvestment = async (data: any) => {
+    try {
+      const response = await axios.post('/api/investments', data);
+      if (user.value) {
+        if (!user.value.investments) {
+          user.value.investments = [];
+        }
+        user.value.investments.push({
+          ...data,
+          id: response.data.id,
+        });
+      }
+      return true;
+    } catch (err) {
+      console.error('Error adding investment', err);
+      return false;
+    }
+  };
+
   const updateProfile = async (data: { name?: string, avatar?: string }) => {
     try {
       await axios.put('/api/user/profile', data);
@@ -195,6 +214,7 @@ export function useUser() {
     searchSubscriptionCatalog,
     addSubscription,
     updateProfile,
-    uploadAvatar
+    uploadAvatar,
+    addInvestment
   };
 }

@@ -12,7 +12,7 @@ withDefaults(defineProps<{
 <template>
   <div :class="cn('flex items-center gap-2.5', $props.class)">
     <span v-if="showWordmark" class="text-base font-semibold tracking-tight text-foreground">
-      SmartBudget
+      SmartBudget <span class="text-green-500">AI</span>
     </span>
   </div>
 </template>

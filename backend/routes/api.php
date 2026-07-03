@@ -16,6 +16,7 @@ Route::middleware('auth:sanctum')->group(function () {
         $accounts = \Illuminate\Support\Facades\DB::table('accounts')->where('user_id', $user->id)->get();
         $goals = \Illuminate\Support\Facades\DB::table('goals')->where('user_id', $user->id)->get();
         $subscriptions = \Illuminate\Support\Facades\DB::table('subscriptions')->where('user_id', $user->id)->get();
+        $investments = \Illuminate\Support\Facades\DB::table('investments')->where('user_id', $user->id)->get();
         
         $funds = \Illuminate\Support\Facades\DB::table('funds')->where('user_id', $user->id)->get();
         $fundIds = $funds->pluck('id')->toArray();
@@ -38,6 +39,7 @@ Route::middleware('auth:sanctum')->group(function () {
         $userData['goals'] = $goals;
         $userData['funds'] = $funds;
         $userData['subscriptions'] = $subscriptions;
+        $userData['investments'] = $investments;
         return $userData;
     });
 
@@ -135,5 +137,23 @@ Route::middleware('auth:sanctum')->group(function () {
         $validated['id'] = $id;
         return response()->json($validated);
     });
+
+    Route::post('/test-subscription-email', function (Request $request) {
+        $user = $request->user();
+        
+        // Find one subscription that is active (e.g. Netflix that we just inserted)
+        $subscription = \Illuminate\Support\Facades\DB::table('subscriptions')
+            ->where('user_id', $user->id)
+            ->first();
+
+        if ($subscription) {
+            \Illuminate\Support\Facades\Mail::to($user->email)->send(new \App\Mail\SubscriptionAlertMail($user, $subscription));
+            return response()->json(['success' => true, 'message' => 'Test email sent successfully to ' . $user->email]);
+        }
+        
+        return response()->json(['success' => false, 'message' => 'No subscriptions found to test with.'], 404);
+    });
+
+    Route::post('/investments', [\App\Http\Controllers\InvestmentController::class, 'store']);
 });
 

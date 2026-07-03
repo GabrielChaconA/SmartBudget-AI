@@ -76,7 +76,7 @@ const isActive = (href: string) => route.path === href
       <!-- Header -->
       <header class="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-border bg-background/80 px-4 backdrop-blur-sm sm:px-6 lg:px-8">
         <div class="lg:hidden">
-          <Logo :showWordmark="false" />
+          <Logo />
         </div>
         <div class="relative hidden flex-1 items-center md:flex">
           <Search class="pointer-events-none absolute left-3 size-4 text-muted-foreground" />
