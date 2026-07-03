@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { TrendingUp, TrendingDown } from '@lucide/vue'
+import { TrendingUp, TrendingDown, RefreshCw } from '@lucide/vue'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { useUser } from '@/composables/useUser'
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { formatCurrency } from '@/lib/data'
 import { use } from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
@@ -15,7 +15,19 @@ use([CanvasRenderer, LineChart, GridComponent, TooltipComponent])
 
 const { user } = useUser()
 
-const totalBalance = computed(() => {
+const displayCurrency = ref(user.value?.currency || 'MXN')
+
+watch(() => user.value?.currency, (newVal) => {
+  if (newVal && !displayCurrency.value) displayCurrency.value = newVal
+})
+
+const toggleCurrency = () => {
+  displayCurrency.value = displayCurrency.value === 'MXN' ? 'USD' : 'MXN'
+}
+
+const getExchangeRate = () => 20.0
+
+const baseBalance = computed(() => {
   let sum = 0
   if (user.value?.accounts) {
     sum += user.value.accounts.reduce((acc: number, a: any) => acc + parseFloat(a.balance), 0)
@@ -23,7 +35,24 @@ const totalBalance = computed(() => {
   if (user.value?.funds) {
     sum += user.value.funds.reduce((acc: number, f: any) => acc + parseFloat(f.balance), 0)
   }
+  // Also add investments!
+  if (user.value?.investments) {
+    sum += user.value.investments.reduce((acc: number, i: any) => {
+      let val = Number(i.quantity);
+      // Convert to user base currency first
+      if (i.currency === 'USD' && user.value?.currency === 'MXN') val *= getExchangeRate();
+      if (i.currency === 'MXN' && user.value?.currency === 'USD') val /= getExchangeRate();
+      return acc + val;
+    }, 0)
+  }
   return sum
+})
+
+const totalBalance = computed(() => {
+  let val = baseBalance.value;
+  if (user.value?.currency === 'MXN' && displayCurrency.value === 'USD') val /= getExchangeRate();
+  if (user.value?.currency === 'USD' && displayCurrency.value === 'MXN') val *= getExchangeRate();
+  return val;
 })
 
 // Generate realistic looking deterministic weekly data ending in totalBalance
@@ -62,7 +91,7 @@ const isPositive = computed(() => changeAmount.value >= 0)
 const chartOption = computed(() => ({
   tooltip: {
     trigger: 'axis',
-    formatter: (params: any) => formatCurrency(params[0].value, user.value?.currency || 'MXN'),
+    formatter: (params: any) => formatCurrency(params[0].value, displayCurrency.value),
     backgroundColor: 'rgba(0, 0, 0, 0.8)',
     textStyle: { color: '#fff' },
     borderWidth: 0,
@@ -130,12 +159,21 @@ const chartOption = computed(() => ({
 <template>
   <Card class="overflow-hidden border-border bg-primary text-primary-foreground relative">
     <CardContent class="flex flex-col md:flex-row md:items-center justify-between p-5 sm:p-8 gap-2 sm:gap-6">
-      <div class="z-10 relative">
-        <p class="text-sm font-medium text-primary-foreground/80">
-          Total Net Worth
-        </p>
+      <div class="z-10 relative whitespace-nowrap">
+        <div class="flex items-center gap-3">
+          <p class="text-sm font-medium text-primary-foreground/80">
+            Total Net Worth
+          </p>
+          <button 
+            @click="toggleCurrency"
+            class="flex items-center justify-center gap-1 rounded-full bg-primary-foreground/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white transition-colors hover:bg-primary-foreground/30"
+          >
+            <RefreshCw class="size-3" />
+            {{ displayCurrency }}
+          </button>
+        </div>
         <p class="mt-1 text-3xl font-semibold tracking-tight sm:text-5xl">
-          {{ formatCurrency(totalBalance, user?.currency || 'MXN') }}
+          {{ formatCurrency(totalBalance, displayCurrency) }}
         </p>
         <div class="mt-2 sm:mt-4 flex flex-wrap items-center gap-2">
           <Badge class="border-0 bg-primary-foreground/15 text-primary-foreground">
@@ -144,11 +182,12 @@ const chartOption = computed(() => ({
             {{ isPositive ? '+' : '' }}{{ changePercent.toFixed(2) }}%
           </Badge>
           <span class="text-sm text-primary-foreground/80">
-            {{ isPositive ? '+' : '' }}{{ formatCurrency(changeAmount, user?.currency || 'MXN') }} today
+            {{ isPositive ? '+' : '' }}{{ formatCurrency(changeAmount, displayCurrency) }} today
           </span>
         </div>
       </div>
-      <div class="w-full h-[60px] sm:h-[80px] md:h-[100px] md:w-[300px] md:max-w-[40%] z-0 relative md:-mr-4 mt-2 md:mt-0" aria-hidden="true">
+      <!-- Expanded graph to fill all available space -->
+      <div class="flex-1 w-full h-[60px] sm:h-[80px] md:h-[120px] z-0 relative md:-mr-8 md:ml-8 mt-4 md:mt-0" aria-hidden="true">
         <VChart :option="chartOption" autoresize />
       </div>
     </CardContent>

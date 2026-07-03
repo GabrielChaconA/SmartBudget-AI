@@ -1,15 +1,18 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { Bell, BellOff, CreditCard, CalendarClock } from '@lucide/vue'
+import { Bell, BellOff, CreditCard, CalendarClock, Plus, Search } from '@lucide/vue'
 import DashboardLayout from '@/components/DashboardLayout.vue'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
+import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
+import { Button } from '@/components/ui/button'
 import { useUser } from '@/composables/useUser'
 import { formatCurrency } from '@/lib/data'
 import AddSubscriptionModal from '@/components/AddSubscriptionModal.vue'
+import AssetLogo from '@/components/AssetLogo.vue'
 
 const { user } = useUser()
 const isAddModalOpen = ref(false)
@@ -29,7 +32,7 @@ const memberships = computed(() => {
   return user.value.subscriptions.map((s: any) => ({
     id: s.id,
     name: s.name,
-    active: s.status === 'active',
+    active: s.status ? s.status === 'active' : true,
     cycle: s.billing_cycle === 'yearly' ? 'Yearly' : 'Monthly',
     notify: getNotifyState(s.id),
     amount: parseFloat(s.amount),
@@ -43,8 +46,14 @@ function toggleNotify(id: number) {
   notifyState.value[id] = !getNotifyState(id)
 }
 
-const active = computed(() => memberships.value.filter((m: any) => m.active))
-const inactive = computed(() => memberships.value.filter((m: any) => !m.active))
+const searchQuery = ref('')
+
+const active = computed(() => 
+  memberships.value.filter((m: any) => m.active && (m.name || '').toLowerCase().includes((searchQuery.value || '').toLowerCase()))
+)
+const inactive = computed(() => 
+  memberships.value.filter((m: any) => !m.active && (m.name || '').toLowerCase().includes((searchQuery.value || '').toLowerCase()))
+)
 
 const monthlyTotal = computed(() => 
   active.value.reduce((sum: number, m: any) => sum + (m.cycle === 'Yearly' ? m.amount / 12 : m.amount), 0)
@@ -64,8 +73,9 @@ const notifyCount = computed(() => active.value.filter((m: any) => m.notify).len
             Manage your subscriptions and choose which ones send you payment reminders.
           </p>
         </div>
-        <Button class="bg-green-600 hover:bg-green-700 text-white rounded-full px-6" @click="isAddModalOpen = true">
-          Add Subscription
+        <Button class="bg-green-600 hover:bg-green-700 text-white rounded-full p-3 sm:px-6 sm:py-2" @click="isAddModalOpen = true">
+          <Plus class="size-8 sm:hidden" stroke-width="2.5" />
+          <span class="hidden sm:inline">Add Subscription</span>
         </Button>
       </header>
 
@@ -106,6 +116,12 @@ const notifyCount = computed(() => active.value.filter((m: any) => m.notify).len
         </Card>
       </div>
 
+      <!-- Search -->
+      <div class="mt-8 relative max-w-sm">
+        <Search class="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+        <Input v-model="searchQuery" placeholder="Search subscriptions..." class="pl-9 bg-card border-border" />
+      </div>
+
       <!-- Active list -->
       <section class="mt-8">
         <div class="mb-3 flex items-center gap-2">
@@ -122,8 +138,8 @@ const notifyCount = computed(() => active.value.filter((m: any) => m.notify).len
               class="flex flex-col gap-4 px-4 py-4 sm:flex-row sm:items-center sm:px-6"
             >
               <div class="flex flex-1 items-center gap-4">
-                <span class="flex size-10 items-center justify-center rounded-xl bg-secondary text-foreground">
-                  <CreditCard class="size-5" />
+                <span class="flex size-10 items-center justify-center rounded-xl bg-secondary text-foreground overflow-hidden">
+                  <AssetLogo :symbol="m.name" :fallback-icon="CreditCard" />
                 </span>
                 <div class="min-w-0">
                   <div class="flex items-center gap-2">
@@ -158,13 +174,18 @@ const notifyCount = computed(() => active.value.filter((m: any) => m.notify).len
                     <BellOff v-else class="size-4" />
                     <span class="hidden sm:inline">Notify</span>
                   </Label>
-                  <Switch
+                  <button 
                     :id="`notify-${m.id}`"
-                    :checked="m.notify"
-                    @update:checked="toggleNotify(m.id)"
+                    class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors duration-300 ease-in-out focus:outline-none"
+                    :class="m.notify ? 'bg-green-500' : 'bg-muted'"
+                    @click="toggleNotify(m.id)"
                     :aria-label="`Toggle notifications for ${m.name}`"
-                    class="data-[state=checked]:bg-green-500"
-                  />
+                  >
+                    <span 
+                      class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-background shadow-md ring-0 transition-transform duration-300 ease-in-out"
+                      :class="m.notify ? 'translate-x-5' : 'translate-x-0'"
+                    />
+                  </button>
                 </div>
               </div>
             </div>
@@ -187,8 +208,8 @@ const notifyCount = computed(() => active.value.filter((m: any) => m.notify).len
               :key="m.id"
               class="flex items-center gap-4 px-4 py-4 opacity-60 sm:px-6"
             >
-              <span class="flex size-10 items-center justify-center rounded-xl bg-muted text-muted-foreground">
-                <CreditCard class="size-5" />
+              <span class="flex size-10 items-center justify-center rounded-xl bg-muted text-muted-foreground overflow-hidden">
+                <AssetLogo :symbol="m.name" :fallback-icon="CreditCard" />
               </span>
               <div class="min-w-0 flex-1">
                 <p class="truncate font-medium text-foreground">{{ m.name }}</p>

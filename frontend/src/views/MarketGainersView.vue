@@ -12,6 +12,7 @@ import { fmpService } from '@/services/financialModelingPrep'
 import { coingeckoService } from '@/services/coingecko'
 import { oddsApiService } from '@/services/oddsApi'
 import { formatCurrency } from '@/lib/data'
+import AssetLogo from '@/components/AssetLogo.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -184,11 +185,10 @@ const filteredItems = computed(() => {
               {{ index + 1 }}
             </span>
             <span :class="[
-              'flex size-10 items-center justify-center rounded-xl text-sm font-semibold shrink-0',
+              'flex size-10 items-center justify-center rounded-xl text-sm font-semibold shrink-0 overflow-hidden',
               h.isPositive ? 'bg-primary/15 text-primary' : 'bg-destructive/15 text-destructive'
             ]">
-              <TrendingUp v-if="h.isPositive" class="size-5" />
-              <TrendingDown v-else class="size-5" />
+              <AssetLogo :symbol="h.ticker" :fallback-icon="h.isPositive ? TrendingUp : TrendingDown" />
             </span>
             <div class="min-w-0 flex-1">
               <p class="truncate font-medium text-foreground">

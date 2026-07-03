@@ -37,10 +37,7 @@ const openFundDetails = (fund: any) => {
     <div v-if="user?.funds?.length > 0" class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
       <!-- New Fund Card inside the grid -->
       <Card 
-        :class="[
-          'border-border border-dashed cursor-pointer hover:border-primary/50 transition-colors items-center justify-center bg-muted/10 min-h-[140px]',
-          user?.funds?.length >= 3 ? 'hidden sm:flex' : 'flex'
-        ]" 
+        class="flex border-border border-dashed cursor-pointer hover:border-primary/50 transition-colors items-center justify-center bg-muted/10 min-h-[140px]" 
         @click="isCreateModalOpen = true"
       >
         <CardContent class="flex flex-col items-center justify-center p-5 text-center h-full w-full opacity-60 hover:opacity-100 transition-opacity">
@@ -52,12 +49,9 @@ const openFundDetails = (fund: any) => {
       </Card>
 
       <Card
-        v-for="(fund, index) in user?.funds"
+        v-for="fund in user?.funds?.slice(0, 3)"
         :key="fund.id"
-        :class="[
-          'border-border cursor-pointer hover:border-primary/50 transition-colors',
-          index >= 3 ? 'hidden sm:block' : ''
-        ]"
+        class="border-border cursor-pointer hover:border-primary/50 transition-colors"
         @click="openFundDetails(fund)"
       >
         <CardContent class="flex flex-col gap-4 p-5">

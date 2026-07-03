@@ -13,6 +13,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { useUser } from '@/composables/useUser'
+import AssetLogo from '@/components/AssetLogo.vue'
+import { CreditCard } from '@lucide/vue'
 
 const props = defineProps<{
   open: boolean
@@ -30,7 +32,8 @@ const showDropdown = ref(false)
 const selectedService = ref<any>(null)
 
 const amount = ref<number | ''>('')
-const nextBillingDate = ref('')
+const startDate = ref('')
+const billingCycle = ref('30_days')
 const notify = ref(true)
 const isSubmitting = ref(false)
 
@@ -63,14 +66,19 @@ const selectService = (service: any) => {
 }
 
 const handleSave = async () => {
-  if (!searchQuery.value || !amount.value || !nextBillingDate.value) return
+  if (!searchQuery.value || !amount.value || !startDate.value) return
   isSubmitting.value = true
+  
+  let nextDate = new Date(startDate.value)
+  if (billingCycle.value === '30_days') nextDate.setDate(nextDate.getDate() + 30)
+  else if (billingCycle.value === '6_months') nextDate.setMonth(nextDate.getMonth() + 6)
+  else if (billingCycle.value === '1_year') nextDate.setFullYear(nextDate.getFullYear() + 1)
   
   const payload = {
     name: searchQuery.value,
     amount: amount.value,
-    billing_cycle: 'monthly',
-    next_billing_date: nextBillingDate.value,
+    billing_cycle: billingCycle.value === '30_days' ? 'monthly' : (billingCycle.value === '6_months' ? 'biannual' : 'yearly'),
+    next_billing_date: nextDate.toISOString().split('T')[0],
     category_id: selectedService.value ? null : null, // Future use if needed
   }
 
@@ -80,7 +88,8 @@ const handleSave = async () => {
   if (success) {
     searchQuery.value = ''
     amount.value = ''
-    nextBillingDate.value = ''
+    startDate.value = ''
+    billingCycle.value = '30_days'
     notify.value = true
     selectedService.value = null
     emit('update:open', false)
@@ -117,9 +126,12 @@ const handleSave = async () => {
             <li 
               v-for="service in searchResults" 
               :key="service.id"
-              class="relative flex w-full cursor-default select-none items-center rounded-sm py-2 px-3 text-sm outline-none hover:bg-accent hover:text-accent-foreground"
+              class="relative flex w-full cursor-pointer select-none items-center gap-3 rounded-sm py-2 px-3 text-sm outline-none hover:bg-accent hover:text-accent-foreground"
               @click="selectService(service)"
             >
+              <span class="flex size-6 items-center justify-center rounded bg-secondary text-foreground overflow-hidden">
+                <AssetLogo :symbol="service.name" :fallback-icon="CreditCard" class="size-4" />
+              </span>
               {{ service.name }}
             </li>
           </ul>
@@ -131,9 +143,18 @@ const handleSave = async () => {
             <Input type="number" v-model="amount" placeholder="0.00" step="0.01" />
           </div>
           <div class="space-y-2">
-            <Label>Next Billing Date</Label>
-            <Input type="date" v-model="nextBillingDate" />
+            <Label>Start Date</Label>
+            <Input type="date" v-model="startDate" />
           </div>
+        </div>
+
+        <div class="space-y-2">
+          <Label>Billing Cycle</Label>
+          <select v-model="billingCycle" class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
+            <option value="30_days">Cada 30 días</option>
+            <option value="6_months">Cada 6 meses</option>
+            <option value="1_year">Cada 1 año</option>
+          </select>
         </div>
 
         <div class="flex flex-row items-center justify-between rounded-lg border border-border p-3 mt-2">
@@ -146,7 +167,13 @@ const handleSave = async () => {
       </div>
       <DialogFooter>
         <Button variant="outline" @click="$emit('update:open', false)">Cancel</Button>
-        <Button @click="handleSave" :disabled="isSubmitting || !searchQuery || !amount || !nextBillingDate">Save</Button>
+        <Button 
+          @click="handleSave" 
+          :disabled="isSubmitting || !searchQuery || !amount || !startDate"
+          class="bg-gradient-to-r from-green-400 to-green-600 hover:from-green-500 hover:to-green-700 text-white rounded-lg h-8 px-4 text-xs font-semibold"
+        >
+          Save
+        </Button>
       </DialogFooter>
     </DialogContent>
   </Dialog>
