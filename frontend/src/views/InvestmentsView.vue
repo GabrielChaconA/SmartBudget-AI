@@ -79,7 +79,7 @@ const isLoading = ref(false)
 const isError = ref(false)
 const lastUpdate = ref<Date | null>(null)
 
-const getExchangeRate = () => 20.0; // 1 USD = 20 MXN approx
+const exchangeRate = ref(20.0);
 
 const fetchData = async () => {
   if (!user.value) return;
@@ -96,21 +96,26 @@ const fetchData = async () => {
     
     const cryptoIds = cryptos.map((c: any) => c.symbol.toLowerCase())
     
-    const [etfRes, stockRes, cryptoRes, oddsRes] = await Promise.allSettled([
+    const [etfRes, stockRes, cryptoRes, oddsRes, usdRes] = await Promise.allSettled([
       Promise.all(etfs.map((h: any) => finnhubService.getQuote(h.symbol).then(q => ({ h, q })))),
       Promise.all(stocks.map((h: any) => finnhubService.getQuote(h.symbol).then(q => ({ h, q })))),
       cryptoIds.length > 0 ? coingeckoService.getMarkets(cryptoIds) : Promise.resolve([]),
-      oddsApiService.getUpcomingOdds()
+      oddsApiService.getUpcomingOdds(),
+      coingeckoService.getUsdMxnRate()
     ])
+    
+    if (usdRes.status === 'fulfilled') {
+      exchangeRate.value = usdRes.value;
+    }
     
     const newHoldings: Record<string, InvestmentHolding[]> = { etfs: [], stocks: [], crypto: [], bets: [] }
     
     const processHolding = (h: any, dp: number) => {
       let baseValue = Number(h.quantity);
       if (h.currency === 'USD' && user.value?.currency === 'MXN') {
-        baseValue *= getExchangeRate();
+        baseValue *= exchangeRate.value;
       } else if (h.currency === 'MXN' && user.value?.currency === 'USD') {
-        baseValue /= getExchangeRate();
+        baseValue /= exchangeRate.value;
       }
       return {
         id: h.id,
@@ -185,26 +190,38 @@ watch(() => user.value?.investments, () => {
   fetchData()
 }, { deep: true })
 
+import { CHART_COLORS, commonTooltip, commonGrid, commonXAxis, commonYAxis } from '@/lib/chartTheme'
+
 const chartOption = ref({
+  backgroundColor: 'transparent',
   tooltip: {
+    ...commonTooltip,
     trigger: 'axis',
     formatter: (params: any) => {
       const v = params[0].value
-      return `$${new Intl.NumberFormat('en-US', { notation: 'compact' }).format(v)}`
+      const date = params[0].name
+      return `<span style="color:${CHART_COLORS.textSecondary}">${date}</span><br/><span style="color:${CHART_COLORS.textPrimary};font-weight:700;font-size:14px;">$${new Intl.NumberFormat('en-US', { notation: 'compact' }).format(v)}</span>`
     }
   },
-  grid: { left: 16, right: 16, top: 16, bottom: 16, containLabel: true },
+  grid: { 
+    ...commonGrid,
+    left: 45, 
+    right: 16, 
+    top: 16, 
+    bottom: 16 
+  },
   xAxis: {
+    ...commonXAxis,
     type: 'category',
     data: portfolioPerformance.map(item => item.month),
-    axisLine: { show: false },
-    axisTick: { show: false },
+    boundaryGap: false
   },
   yAxis: {
+    ...commonYAxis,
     type: 'value',
-    splitLine: { lineStyle: { type: 'dashed', color: '#333' } },
     axisLabel: {
-      formatter: (v: number) => new Intl.NumberFormat('en-US', { notation: 'compact' }).format(v)
+      ...commonYAxis.axisLabel,
+      formatter: (v: number) => `$${new Intl.NumberFormat('en-US', { notation: 'compact' }).format(v)}`
     }
   },
   series: [
@@ -213,19 +230,21 @@ const chartOption = ref({
       type: 'line',
       smooth: true,
       showSymbol: false,
-      itemStyle: { color: '#0ea5e9' },
+      itemStyle: { color: CHART_COLORS.primary },
       lineStyle: { width: 3 },
       areaStyle: {
         color: {
           type: 'linear',
           x: 0, y: 0, x2: 0, y2: 1,
           colorStops: [{
-              offset: 0, color: 'rgba(14, 165, 233, 0.4)'
+              offset: 0, color: 'rgba(29, 161, 242, 0.4)'
           }, {
-              offset: 1, color: 'rgba(14, 165, 233, 0)'
+              offset: 1, color: 'rgba(29, 161, 242, 0)'
           }]
         }
-      }
+      },
+      animationDuration: 1000,
+      animationEasing: 'cubicOut'
     }
   ]
 })
@@ -475,6 +494,6 @@ const chartOption = ref({
       </section>
     </div>
     
-    <AddInvestmentModal v-model:open="isAddModalOpen" />
+    <AddInvestmentModal v-model:open="isAddModalOpen" :initial-category="activeCat !== 'all' ? activeCat : undefined" />
   </DashboardLayout>
 </template>

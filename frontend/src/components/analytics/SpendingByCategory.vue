@@ -10,6 +10,7 @@ import {
 import { CanvasRenderer } from 'echarts/renderers'
 import VChart from 'vue-echarts'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { CHART_COLORS, getTranslucentStyle } from '@/lib/chartTheme'
 
 echarts.use([
   TitleComponent,
@@ -19,27 +20,50 @@ echarts.use([
   CanvasRenderer
 ])
 
+const rawData = [
+  { value: 1200, name: 'Housing' },
+  { value: 600, name: 'Food' },
+  { value: 400, name: 'Transport' },
+  { value: 300, name: 'Entertainment' },
+  { value: 200, name: 'Other' }
+]
+const chartData = rawData.sort((a, b) => b.value - a.value).map((item, idx) => ({
+  ...item,
+  itemStyle: { ...getTranslucentStyle(CHART_COLORS.pieColors[idx % CHART_COLORS.pieColors.length]) }
+}))
+const totalSpending = chartData.reduce((acc, curr) => acc + curr.value, 0)
+
 const chartOption = ref({
   backgroundColor: 'transparent',
   tooltip: {
+    backgroundColor: CHART_COLORS.tooltipBg,
+    borderColor: CHART_COLORS.tooltipBorder,
+    borderRadius: 8,
+    padding: [8, 12],
     trigger: 'item',
-    formatter: '{a} <br/>{b}: ${c} ({d}%)'
+    formatter: (params: any) => {
+      const val = new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD'
+      }).format(params.value)
+      return `<span style="color:${CHART_COLORS.textSecondary}">${params.name}</span><br/><span style="color:${CHART_COLORS.textPrimary};font-weight:700;font-size:14px;">${val}</span> <span style="font-size:12px;color:${CHART_COLORS.textTertiary}">(${params.percent}%)</span>`
+    }
   },
   legend: {
     bottom: '0%',
     left: 'center',
-    textStyle: { color: '#a1a1aa' }
+    textStyle: { color: CHART_COLORS.textSecondary },
+    icon: 'circle',
+    itemGap: 16
   },
   series: [
     {
       name: 'Category',
       type: 'pie',
-      radius: ['40%', '70%'],
+      radius: ['45%', '75%'],
       avoidLabelOverlap: false,
       itemStyle: {
-        borderRadius: 10,
-        borderColor: '#161616',
-        borderWidth: 2
+        borderRadius: 8
       },
       label: {
         show: false,
@@ -48,43 +72,32 @@ const chartOption = ref({
       emphasis: {
         label: {
           show: true,
-          fontSize: 20,
+          fontSize: 16,
           fontWeight: 'bold',
-          color: '#f5f5f5'
+          color: CHART_COLORS.textPrimary,
+          fontFamily: 'Inter, Geist, sans-serif'
         }
       },
       labelLine: {
         show: false
       },
-      data: [
-        { value: 1200, name: 'Housing', itemStyle: { color: '#22c55e' } },
-        { value: 600, name: 'Food', itemStyle: { color: '#4ade80' } },
-        { value: 400, name: 'Transport', itemStyle: { color: '#16a34a' } },
-        { value: 300, name: 'Entertainment', itemStyle: { color: '#a1a1aa' } },
-        { value: 200, name: 'Other', itemStyle: { color: '#525252' } }
-      ]
+      data: chartData
     }
   ]
 })
 </script>
 
 <template>
-  <Card class="bg-card border-border">
-    <CardHeader>
-      <CardTitle class="text-foreground">Spending by Category</CardTitle>
-      <CardDescription>Where your money went this month</CardDescription>
-    </CardHeader>
-    <CardContent>
-      <div class="h-[300px] w-full">
-        <VChart class="chart" :option="chartOption" autoresize />
+  <Card class="border-border/50 bg-[#111111] flex flex-col rounded-[20px] shadow-none p-2 sm:p-4">
+    <CardHeader class="pb-2">
+      <CardTitle class="text-base font-normal text-[#a1a1aa]">Spending by Category</CardTitle>
+      <div class="mt-1 flex items-baseline gap-2">
+         <span class="text-3xl font-bold text-white tracking-tight">${{ new Intl.NumberFormat('en-US').format(totalSpending) }}</span>
       </div>
+      <CardDescription class="text-[#6b7280]">Where your money went this month</CardDescription>
+    </CardHeader>
+    <CardContent class="h-[300px] w-full p-0 mt-4 flex items-center justify-center">
+      <VChart class="w-full h-full" :option="chartOption" autoresize />
     </CardContent>
   </Card>
 </template>
-
-<style scoped>
-.chart {
-  height: 100%;
-  width: 100%;
-}
-</style>

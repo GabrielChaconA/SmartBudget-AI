@@ -4,9 +4,10 @@ import { Card, CardContent } from '@/components/ui/card'
 import { formatCurrency } from '@/lib/data'
 import { useUser } from '@/composables/useUser'
 import { TrendingUp, Layers } from '@lucide/vue'
-import { RouterLink } from 'vue-router'
+import { RouterLink, useRouter } from 'vue-router'
 
 const { user } = useUser()
+const router = useRouter()
 
 const getExchangeRate = () => 20.0
 
@@ -36,7 +37,7 @@ const numInvestments = computed(() => user.value?.investments?.length || 0)
       </RouterLink>
     </div>
     
-    <Card class="border-border cursor-pointer hover:border-primary/50 transition-colors bg-gradient-to-br from-card to-card/50">
+    <Card @click="router.push('/investments')" class="border-border cursor-pointer hover:border-primary/50 transition-colors bg-gradient-to-br from-card to-card/50">
       <CardContent class="flex flex-col gap-4 p-5">
         <div class="flex items-center justify-between">
           <div class="flex size-10 items-center justify-center rounded-xl bg-blue-500/15 text-blue-500">

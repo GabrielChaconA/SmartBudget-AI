@@ -56,16 +56,14 @@ const router = createRouter({
   ]
 })
 
-router.beforeEach((to, _from, next) => {
+router.beforeEach((to) => {
   const isAuthenticated = !!localStorage.getItem('auth_token')
   const isPublicRoute = to.name === 'login'
 
   if (!isAuthenticated && !isPublicRoute) {
-    next({ name: 'login' })
+    return { name: 'login' }
   } else if (isAuthenticated && isPublicRoute) {
-    next({ name: 'home' })
-  } else {
-    next()
+    return { name: 'home' }
   }
 })
 

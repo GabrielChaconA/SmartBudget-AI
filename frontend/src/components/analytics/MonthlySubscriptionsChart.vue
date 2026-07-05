@@ -7,10 +7,17 @@ import * as echarts from 'echarts/core'
 import { BarChart } from 'echarts/charts'
 import { TooltipComponent, GridComponent } from 'echarts/components'
 import { CanvasRenderer } from 'echarts/renderers'
+import { CHART_COLORS, commonTooltip, commonGrid, commonXAxis, commonYAxis, getTranslucentStyle } from '@/lib/chartTheme'
 
 echarts.use([TooltipComponent, GridComponent, BarChart, CanvasRenderer])
 
 const { user } = useUser()
+
+const totalSubscriptionsCost = computed(() => {
+  return (user.value?.subscriptions || [])
+    .filter((s: any) => s.status !== 'inactive')
+    .reduce((acc, s) => acc + (s.billing_cycle === 'yearly' ? parseFloat(s.amount) / 12 : parseFloat(s.amount)), 0)
+})
 
 const chartOption = computed(() => {
   // Only active subscriptions
@@ -28,6 +35,7 @@ const chartOption = computed(() => {
 
   return {
     tooltip: {
+      ...commonTooltip,
       trigger: 'axis',
       axisPointer: { type: 'shadow' },
       formatter: (params: any) => {
@@ -35,44 +43,55 @@ const chartOption = computed(() => {
           style: 'currency',
           currency: user.value?.currency || 'MXN'
         }).format(params[0].value)
-        return `${params[0].name}: <br/><b>${val}</b> / mes`
+        return `<span style="color:${CHART_COLORS.textSecondary}">${params[0].name}</span><br/><span style="color:${CHART_COLORS.textPrimary};font-weight:700;font-size:14px;">${val} <span style="font-size:12px;color:${CHART_COLORS.textTertiary}">/ mes</span></span>`
       }
     },
     grid: {
-      left: '3%',
-      right: '8%',
-      bottom: '3%',
-      top: '5%',
+      ...commonGrid,
+      top: 10,
+      left: 16,
+      right: 16,
+      bottom: 0,
       containLabel: true
     },
     xAxis: {
+      ...commonXAxis,
       type: 'value',
       splitLine: {
-        lineStyle: { type: 'dashed', color: '#27272a' }
-      },
-      axisLabel: { color: '#a1a1aa' }
+        show: true,
+        lineStyle: { type: 'dashed', color: CHART_COLORS.gridLine }
+      }
     },
     yAxis: {
+      ...commonYAxis,
       type: 'category',
       data: names,
-      axisLabel: { color: '#f4f4f5', width: 100, overflow: 'truncate' },
-      axisLine: { lineStyle: { color: '#3f3f46' } }
+      splitLine: { show: false },
+      axisLabel: { 
+        ...commonYAxis.axisLabel,
+        color: CHART_COLORS.textSecondary, 
+        width: 80, 
+        overflow: 'truncate' 
+      },
     },
     series: [
       {
         name: 'Costo Mensual',
         type: 'bar',
+        barWidth: '40%',
         data: values,
         itemStyle: {
-          color: '#15803d', // Solid green
+          ...getTranslucentStyle(CHART_COLORS.primary),
           borderRadius: [0, 4, 4, 0]
         },
+        emphasis: {
+          itemStyle: { color: CHART_COLORS.primary }
+        },
         label: {
-          show: true,
-          position: 'right',
-          color: '#a1a1aa',
-          formatter: (params: any) => `$${Math.round(params.value)}`
-        }
+          show: false // Hidden since we have tooltip and X axis
+        },
+        animationDuration: 400,
+        animationEasing: 'cubicOut'
       }
     ]
   }
@@ -80,13 +99,17 @@ const chartOption = computed(() => {
 </script>
 
 <template>
-  <Card class="border-border flex flex-col">
-    <CardHeader class="pb-2">
-      <CardTitle class="text-base">Gasto en Suscripciones</CardTitle>
-      <CardDescription>Costo mensual por suscripción activa</CardDescription>
+  <Card class="border-border/50 bg-[#111111] flex flex-col rounded-[20px] shadow-none overflow-hidden pt-4 sm:pt-6">
+    <CardHeader class="px-4 sm:px-6 pb-2">
+      <CardTitle class="text-base font-normal text-[#a1a1aa]">Gasto en Suscripciones</CardTitle>
+      <div class="mt-1 flex items-baseline gap-2">
+         <span class="text-3xl font-bold text-white tracking-tight">${{ new Intl.NumberFormat('en-US').format(totalSubscriptionsCost) }}</span>
+         <span class="text-sm font-medium text-[#6b7280]">/ mes</span>
+      </div>
+      <CardDescription class="text-[#6b7280]">Costo mensual por suscripción activa</CardDescription>
     </CardHeader>
-    <CardContent class="h-[300px] w-full p-4">
-      <div v-if="(user?.subscriptions || []).length === 0" class="text-muted-foreground text-sm flex h-full items-center justify-center">
+    <CardContent class="h-[300px] w-full p-0 mt-4">
+      <div v-if="(user?.subscriptions || []).length === 0" class="text-[#6b7280] text-sm flex h-full items-center justify-center">
         No hay suscripciones activas
       </div>
       <VChart v-else :option="chartOption" autoresize class="w-full h-full" />

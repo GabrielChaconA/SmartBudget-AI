@@ -3,9 +3,11 @@ import { TrendingUp, TrendingDown, RefreshCw, Eye, EyeOff } from '@lucide/vue'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { useUser } from '@/composables/useUser'
-import { computed, ref, watch } from 'vue'
+import { computed, ref, watch, onMounted } from 'vue'
 import { formatCurrency } from '@/lib/data'
+import { coingeckoService } from '@/services/coingecko'
 import { use } from 'echarts/core'
+import * as echarts from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
 import { LineChart } from 'echarts/charts'
 import { GridComponent, TooltipComponent } from 'echarts/components'
@@ -25,20 +27,22 @@ const toggleCurrency = () => {
   displayCurrency.value = displayCurrency.value === 'MXN' ? 'USD' : 'MXN'
 }
 
-const getExchangeRate = () => 20.0
+const exchangeRate = ref(20.0)
+onMounted(async () => {
+  exchangeRate.value = await coingeckoService.getUsdMxnRate()
+})
+const getExchangeRate = () => exchangeRate.value
 
 const baseBalance = computed(() => {
   let sum = 0
   if (user.value?.accounts) {
-    sum += user.value.accounts.reduce((acc: number, a: any) => acc + parseFloat(a.balance), 0)
+    sum += user.value.accounts.reduce((acc: number, a: any) => acc + (parseFloat(a.balance) || 0), 0)
   }
-  if (user.value?.funds) {
-    sum += user.value.funds.reduce((acc: number, f: any) => acc + parseFloat(f.balance), 0)
-  }
+  // Fund balances are subsets of Account balances (e.g. Cartera), so adding them here would double-count.
   // Also add investments!
   if (user.value?.investments) {
     sum += user.value.investments.reduce((acc: number, i: any) => {
-      let val = Number(i.quantity);
+      let val = Number(i.quantity || 0);
       // Convert to user base currency first
       if (i.currency === 'USD' && user.value?.currency === 'MXN') val *= getExchangeRate();
       if (i.currency === 'MXN' && user.value?.currency === 'USD') val /= getExchangeRate();
@@ -52,13 +56,13 @@ const totalBalance = computed(() => {
   let val = baseBalance.value;
   if (user.value?.currency === 'MXN' && displayCurrency.value === 'USD') val /= getExchangeRate();
   if (user.value?.currency === 'USD' && displayCurrency.value === 'MXN') val *= getExchangeRate();
-  return val;
+  return val || 0;
 })
 
 // Generate realistic looking deterministic weekly data ending in totalBalance
 const weeklyHistory = computed(() => {
   const current = totalBalance.value
-  if (current === 0) return [0, 0, 0, 0, 0, 0, 0]
+  if (!current || current === 0) return [0, 0, 0, 0, 0, 0, 0]
   
   // Use a pseudo-random pattern based on the balance to keep it deterministic
   const seed = current % 100
@@ -77,12 +81,12 @@ const weeklyHistory = computed(() => {
 
 const changeAmount = computed(() => {
   const data = weeklyHistory.value
-  return data[6] - data[5]
+  return (data[6] || 0) - (data[5] || 0)
 })
 
 const changePercent = computed(() => {
   const data = weeklyHistory.value
-  if (data[5] === 0) return 0
+  if (!data[5] || data[5] === 0) return 0
   return (changeAmount.value / data[5]) * 100
 })
 
@@ -142,14 +146,10 @@ const chartOption = computed(() => ({
         width: 3,
       },
       areaStyle: {
-        color: {
-          type: 'linear',
-          x: 0, y: 0, x2: 0, y2: 1,
-          colorStops: [
-            { offset: 0, color: 'rgba(255,255,255,0.4)' },
-            { offset: 1, color: 'rgba(255,255,255,0.0)' }
-          ]
-        }
+        color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+          { offset: 0, color: 'rgba(255,255,255,0.4)' },
+          { offset: 1, color: 'rgba(255,255,255,0.0)' }
+        ])
       }
     }
   ]
@@ -196,8 +196,8 @@ const chartOption = computed(() => ({
         </div>
       </div>
       <!-- Expanded graph to fill all available space -->
-      <div class="flex-1 w-full h-[60px] sm:h-[80px] md:h-[120px] z-0 relative md:-mr-8 md:ml-8 mt-4 md:mt-0" aria-hidden="true">
-        <VChart :option="chartOption" autoresize />
+      <div class="flex-1 w-full relative mt-4 md:mt-0" aria-hidden="true" style="min-height: 120px;">
+        <VChart :option="chartOption" autoresize style="width: 100%; height: 100%; position: absolute; top: 0; left: 0;" />
       </div>
     </CardContent>
   </Card>

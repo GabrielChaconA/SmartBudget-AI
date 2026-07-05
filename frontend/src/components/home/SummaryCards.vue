@@ -47,7 +47,8 @@ const openFundDetails = (fund: any) => {
         <CardContent class="flex flex-col gap-4 p-5">
           <div class="flex items-center justify-between">
             <div class="flex size-10 items-center justify-center rounded-xl bg-accent text-accent-foreground" :style="fund.color ? { color: fund.color } : {}">
-              <Wallet class="size-5" />
+              <span v-if="fund.icon" class="text-xl">{{ fund.icon }}</span>
+              <Wallet v-else class="size-5" />
             </div>
             <Button variant="ghost" size="icon" @click.stop="toggleItemVisibility(`fund_${fund.id}`)" class="h-8 w-8 text-muted-foreground hover:text-foreground">
               <Eye v-if="isItemVisible(`fund_${fund.id}`)" class="size-4" />

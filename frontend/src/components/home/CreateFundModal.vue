@@ -25,6 +25,7 @@ const emit = defineEmits<{
 const { createFund, freeMoney, user } = useUser()
 const name = ref('')
 const balance = ref(0)
+const icon = ref('📦')
 const isSubmitting = ref(false)
 
 const isOverLimit = computed(() => balance.value > freeMoney.value)
@@ -36,11 +37,13 @@ const handleCreate = async () => {
     name: name.value,
     balance: balance.value,
     color: '#3b82f6', // Default blue
+    icon: icon.value,
   })
   isSubmitting.value = false
   if (success) {
     name.value = ''
     balance.value = 0
+    icon.value = '📦'
     emit('update:open', false)
   }
 }
@@ -56,6 +59,10 @@ const handleCreate = async () => {
         </DialogDescription>
       </DialogHeader>
       <div class="grid gap-4 py-4">
+        <div class="grid grid-cols-4 items-center gap-4">
+          <Label for="icon" class="text-right">Icono (Emoji)</Label>
+          <Input id="icon" v-model="icon" class="col-span-3 text-2xl h-12 w-16 text-center" placeholder="📦" maxlength="5" />
+        </div>
         <div class="grid grid-cols-4 items-center gap-4">
           <Label for="name" class="text-right">Name</Label>
           <Input id="name" v-model="name" class="col-span-3" placeholder="e.g., Vacation Fund" />

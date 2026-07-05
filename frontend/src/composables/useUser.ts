@@ -18,6 +18,7 @@ const error = ref<string | null>(null);
 const isInitialized = ref(false);
 const isBalancesVisible = ref(true);
 const hiddenBalances = ref<Record<string, boolean>>({});
+const notifications = ref<any[]>([]);
 
 export function clearUserCache() {
   user.value = null;
@@ -77,14 +78,13 @@ export function useUser() {
     }
   };
 
-  const allocateFund = async (fundId: number, categoryName: string, amount: number) => {
+  const allocateFund = async (fundId: number, categoryName: string, amount: number, icon: string = '') => {
     try {
-      await axios.post(`/api/funds/${fundId}/allocations`, { category_name: categoryName, amount });
+      await axios.post(`/api/funds/${fundId}/allocations`, { category_name: categoryName, amount, icon });
       if (user.value) {
         const fund = user.value.funds.find((f: any) => f.id === fundId);
         if (fund) {
-          fund.allocations.push({ category_name: categoryName, amount });
-          fund.balance = (parseFloat(fund.balance) + parseFloat(amount.toString())).toString();
+          fund.allocations.push({ category_name: categoryName, amount, category_icon: icon });
         }
       }
       return true;
@@ -167,27 +167,18 @@ export function useUser() {
 
   const uploadAvatar = async (file: File) => {
     try {
-      const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
-      const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
-      
-      if (!cloudName || !uploadPreset) {
-        console.error('Cloudinary credentials missing');
-        return false;
-      }
-
+      isLoading.value = true;
       const formData = new FormData();
       formData.append('file', file);
-      formData.append('upload_preset', uploadPreset);
 
-      isLoading.value = true;
-      const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
-        method: 'POST',
-        body: formData
+      const response = await axios.post('/api/user/avatar', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
       });
-      const data = await res.json();
-      
-      if (data.secure_url) {
-        await updateProfile({ avatar: data.secure_url });
+
+      if (response.data.secure_url && user.value) {
+        user.value.avatar = response.data.secure_url;
         return true;
       }
       return false;
@@ -243,11 +234,46 @@ export function useUser() {
     return user.value.investments.reduce((sum: number, i: any) => sum + parseFloat(i.quantity), 0);
   });
 
+  const addFreeMoney = async (amount: number) => {
+    try {
+      await axios.post('/api/accounts/add-money', { amount });
+      if (user.value) {
+        // Optimistically update or create Cartera
+        if (!user.value.accounts) user.value.accounts = [];
+        const cartera = user.value.accounts.find((a: any) => a.name === 'Cartera');
+        if (cartera) {
+          cartera.balance = (parseFloat(cartera.balance) + amount).toString();
+        } else {
+          user.value.accounts.push({
+            id: Date.now(),
+            name: 'Cartera',
+            type: 'cash',
+            balance: amount.toString()
+          });
+        }
+      }
+      return true;
+    } catch (err) {
+      console.error('Error adding free money', err);
+      return false;
+    }
+  };
+
+  const fetchNotifications = async () => {
+    try {
+      const response = await axios.get('/api/notifications');
+      notifications.value = response.data;
+    } catch (err) {
+      console.error('Error fetching notifications', err);
+    }
+  };
+
   return {
     user,
     isLoading,
     error,
     isBalancesVisible,
+    notifications,
     toggleBalances,
     toggleItemVisibility,
     isItemVisible,
@@ -261,6 +287,8 @@ export function useUser() {
     updateProfile,
     uploadAvatar,
     addInvestment,
+    addFreeMoney,
+    fetchNotifications,
     freeMoney,
     totalFundsAmount,
     totalSubscriptionsAmount,

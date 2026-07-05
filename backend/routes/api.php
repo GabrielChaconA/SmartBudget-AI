@@ -10,6 +10,7 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::put('/user/profile', [ProfileController::class, 'update']);
+    Route::post('/user/avatar', [ProfileController::class, 'uploadAvatar']);
     Route::get('/user', function (Request $request) {
         $user = $request->user();
         $settings = \Illuminate\Support\Facades\DB::table('settings')->where('user_id', $user->id)->first();
@@ -22,7 +23,7 @@ Route::middleware('auth:sanctum')->group(function () {
         $fundIds = $funds->pluck('id')->toArray();
         $allocations = \Illuminate\Support\Facades\DB::table('fund_allocations')
             ->join('categories', 'fund_allocations.category_id', '=', 'categories.id')
-            ->select('fund_allocations.*', 'categories.name as category_name')
+            ->select('fund_allocations.*', 'categories.name as category_name', 'categories.icon as category_icon')
             ->whereIn('fund_allocations.fund_id', $fundIds)
             ->get();
             
@@ -43,6 +44,46 @@ Route::middleware('auth:sanctum')->group(function () {
         return $userData;
     });
 
+    Route::post('/accounts/add-money', function (Request $request) {
+        $validated = $request->validate([
+            'amount' => 'required|numeric|min:0.01'
+        ]);
+
+        $userId = $request->user()->id;
+        $amount = $validated['amount'];
+
+        $account = \Illuminate\Support\Facades\DB::table('accounts')
+            ->where('user_id', $userId)
+            ->where('name', 'Cartera')
+            ->first();
+
+        if ($account) {
+            \Illuminate\Support\Facades\DB::table('accounts')
+                ->where('id', $account->id)
+                ->increment('balance', $amount);
+        } else {
+            \Illuminate\Support\Facades\DB::table('accounts')->insert([
+                'user_id' => $userId,
+                'name' => 'Cartera',
+                'type' => 'cash',
+                'balance' => $amount,
+                'created_at' => now(),
+                'updated_at' => now()
+            ]);
+        }
+
+        return response()->json(['success' => true]);
+    });
+
+    Route::get('/notifications', function (Request $request) {
+        $notifications = \Illuminate\Support\Facades\DB::table('notifications')
+            ->where('user_id', $request->user()->id)
+            ->orderBy('created_at', 'desc')
+            ->take(50)
+            ->get();
+        return response()->json($notifications);
+    });
+
     Route::post('/funds', function (Request $request) {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
@@ -60,10 +101,36 @@ Route::middleware('auth:sanctum')->group(function () {
             'name' => 'sometimes|string|max:255',
             'balance' => 'sometimes|numeric',
         ]);
+        $fund = \Illuminate\Support\Facades\DB::table('funds')
+            ->where('id', $id)
+            ->where('user_id', $request->user()->id)
+            ->first();
+            
+        if (!$fund) {
+            return response()->json(['success' => false, 'message' => 'Fund not found'], 404);
+        }
+
         \Illuminate\Support\Facades\DB::table('funds')
             ->where('id', $id)
             ->where('user_id', $request->user()->id)
             ->update($validated);
+            
+        if (isset($validated['balance']) && $validated['balance'] != $fund->balance) {
+            $diff = $validated['balance'] - $fund->balance;
+            $action = $diff > 0 ? 'agregado a' : 'retirado de';
+            $absAmount = abs($diff);
+            $title = $diff > 0 ? 'Dinero Agregado' : 'Dinero Retirado';
+            
+            \Illuminate\Support\Facades\DB::table('notifications')->insert([
+                'user_id' => $request->user()->id,
+                'type' => 'fund_update',
+                'title' => $title,
+                'message' => "Has {$action} \${$absAmount} la caja '{$fund->name}'.",
+                'created_at' => now(),
+                'updated_at' => now()
+            ]);
+        }
+
         return response()->json(['success' => true]);
     });
 
@@ -71,30 +138,56 @@ Route::middleware('auth:sanctum')->group(function () {
         $validated = $request->validate([
             'category_name' => 'required|string|max:100',
             'amount' => 'required|numeric',
+            'icon' => 'nullable|string|max:5',
         ]);
         // Simple logic to find or create category
         $category = \Illuminate\Support\Facades\DB::table('categories')
-            ->where('user_id', $request->user()->id)
             ->where('name', $validated['category_name'])
             ->first();
         if (!$category) {
             $categoryId = \Illuminate\Support\Facades\DB::table('categories')->insertGetId([
-                'user_id' => $request->user()->id,
                 'name' => $validated['category_name'],
-                'type' => 'expense'
+                'type' => 'expense',
+                'icon' => $validated['icon'] ?? null
             ]);
         } else {
             $categoryId = $category->id;
+            if (isset($validated['icon']) && $category->icon !== $validated['icon']) {
+                \Illuminate\Support\Facades\DB::table('categories')
+                    ->where('id', $categoryId)
+                    ->update(['icon' => $validated['icon']]);
+            }
         }
         
-        \Illuminate\Support\Facades\DB::table('fund_allocations')->insert([
-            'fund_id' => $id,
-            'category_id' => $categoryId,
-            'amount' => $validated['amount']
-        ]);
+        $existing = \Illuminate\Support\Facades\DB::table('fund_allocations')
+            ->where('fund_id', $id)
+            ->where('category_id', $categoryId)
+            ->first();
+
+        if ($existing) {
+            \Illuminate\Support\Facades\DB::table('fund_allocations')
+                ->where('id', $existing->id)
+                ->update(['amount' => $validated['amount']]);
+        } else {
+            \Illuminate\Support\Facades\DB::table('fund_allocations')->insert([
+                'fund_id' => $id,
+                'category_id' => $categoryId,
+                'amount' => $validated['amount']
+            ]);
+        }
         
-        // Increment the total fund balance
-        \Illuminate\Support\Facades\DB::table('funds')->where('id', $id)->increment('balance', $validated['amount']);
+        $fund = \Illuminate\Support\Facades\DB::table('funds')->where('id', $id)->first();
+        $absAmount = abs($validated['amount']);
+        $title = 'Asignación de Caja';
+        
+        \Illuminate\Support\Facades\DB::table('notifications')->insert([
+            'user_id' => $request->user()->id,
+            'type' => 'fund_allocation',
+            'title' => $title,
+            'message' => "Has asignado \${$absAmount} a '{$validated['category_name']}' en la caja '{$fund->name}'.",
+            'created_at' => now(),
+            'updated_at' => now()
+        ]);
 
         return response()->json(['success' => true]);
     });

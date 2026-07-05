@@ -15,6 +15,7 @@ import { investmentHoldings as fallbackHoldings } from '@/lib/data'
 import { finnhubService } from '@/services/finnhub'
 import { coingeckoService } from '@/services/coingecko'
 import { oddsApiService } from '@/services/oddsApi'
+import { CHART_COLORS, getTranslucentStyle } from '@/lib/chartTheme'
 
 echarts.use([
   TitleComponent,
@@ -26,24 +27,45 @@ echarts.use([
 
 const isLoading = ref(false)
 const isError = ref(false)
-const chartData = ref([
-  { value: 15, name: 'Bonds', itemStyle: { color: '#52525b' } },
-  { value: 10, name: 'Crypto', itemStyle: { color: '#a1a1aa' } },
-  { value: 27, name: 'ETFs', itemStyle: { color: '#4ade80' } },
-  { value: 48, name: 'Stocks', itemStyle: { color: '#22c55e' } }
-])
+
+const defaultData = [
+  { value: 15, name: 'Bonds' },
+  { value: 10, name: 'Crypto' },
+  { value: 27, name: 'ETFs' },
+  { value: 48, name: 'Stocks' }
+]
+
+const chartData = ref(defaultData.sort((a, b) => b.value - a.value).map((item, idx) => ({
+  ...item,
+  itemStyle: { ...getTranslucentStyle(CHART_COLORS.pieColors[idx % CHART_COLORS.pieColors.length]) }
+})))
+
+const totalValue = computed(() => {
+  return chartData.value.reduce((acc, curr) => acc + curr.value, 0)
+})
 
 const chartOption = computed(() => ({
   backgroundColor: 'transparent',
   tooltip: {
+    backgroundColor: CHART_COLORS.tooltipBg,
+    borderColor: CHART_COLORS.tooltipBorder,
+    borderRadius: 8,
+    padding: [8, 12],
     trigger: 'item',
-    formatter: '{a} <br/>{b}: {c} ({d}%)'
+    formatter: (params: any) => {
+      const val = new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD'
+      }).format(params.value)
+      return `<span style="color:${CHART_COLORS.textSecondary}">${params.name}</span><br/><span style="color:${CHART_COLORS.textPrimary};font-weight:700;font-size:14px;">${val}</span> <span style="font-size:12px;color:${CHART_COLORS.textTertiary}">(${params.percent}%)</span>`
+    }
   },
   legend: {
     bottom: '0%',
     left: 'center',
-    textStyle: { color: '#a1a1aa' },
-    icon: 'square'
+    textStyle: { color: CHART_COLORS.textSecondary },
+    icon: 'circle',
+    itemGap: 16
   },
   series: [
     {
@@ -52,8 +74,7 @@ const chartOption = computed(() => ({
       radius: ['45%', '75%'],
       avoidLabelOverlap: false,
       itemStyle: {
-        borderColor: '#18181b',
-        borderWidth: 0
+        borderRadius: 8
       },
       label: { show: false, position: 'center' },
       emphasis: {
@@ -61,7 +82,8 @@ const chartOption = computed(() => ({
           show: true,
           fontSize: 16,
           fontWeight: 'bold',
-          color: '#f5f5f5'
+          color: CHART_COLORS.textPrimary,
+          fontFamily: 'Inter, Geist, sans-serif'
         }
       },
       labelLine: { show: false },
@@ -106,12 +128,20 @@ const fetchData = async () => {
     }
 
     if (etfValue || stockValue || cryptoValue || betsValue) {
-      chartData.value = [
-        { value: Math.round(betsValue), name: 'Bets', itemStyle: { color: '#52525b' } },
-        { value: Math.round(cryptoValue), name: 'Crypto', itemStyle: { color: '#a1a1aa' } },
-        { value: Math.round(etfValue), name: 'ETFs', itemStyle: { color: '#4ade80' } },
-        { value: Math.round(stockValue), name: 'Stocks', itemStyle: { color: '#22c55e' } }
+      const rawData = [
+        { value: Math.round(betsValue), name: 'Bets' },
+        { value: Math.round(cryptoValue), name: 'Crypto' },
+        { value: Math.round(etfValue), name: 'ETFs' },
+        { value: Math.round(stockValue), name: 'Stocks' }
       ]
+      
+      chartData.value = rawData
+        .filter(item => item.value > 0)
+        .sort((a, b) => b.value - a.value)
+        .map((item, idx) => ({
+          ...item,
+          itemStyle: { ...getTranslucentStyle(CHART_COLORS.pieColors[idx % CHART_COLORS.pieColors.length]) }
+        }))
     }
   } catch {
     isError.value = true
@@ -126,30 +156,24 @@ onMounted(() => {
 </script>
 
 <template>
-  <Card class="bg-card border-border relative">
-    <CardHeader class="flex flex-row items-start justify-between">
-      <div>
-        <CardTitle class="text-foreground">Investment Allocation</CardTitle>
-        <CardDescription>Portfolio breakdown</CardDescription>
+  <Card class="border-border/50 bg-[#111111] flex flex-col rounded-[20px] shadow-none p-2 sm:p-4 relative">
+    <CardHeader class="pb-2 flex flex-row items-start justify-between">
+      <div class="flex flex-col">
+        <CardTitle class="text-base font-normal text-[#a1a1aa]">Investment Allocation</CardTitle>
+        <div class="mt-1 flex items-baseline gap-2">
+           <span class="text-3xl font-bold text-white tracking-tight">${{ new Intl.NumberFormat('en-US').format(totalValue) }}</span>
+        </div>
+        <CardDescription class="text-[#6b7280]">Portfolio breakdown</CardDescription>
       </div>
-      <div v-if="isLoading" class="text-muted-foreground animate-spin">
+      <div v-if="isLoading" class="text-[#a1a1aa] animate-spin">
         <RefreshCw class="size-4" />
       </div>
       <div v-else-if="isError" class="text-destructive flex items-center">
         <AlertCircle class="size-4 mr-1" />
       </div>
     </CardHeader>
-    <CardContent>
-      <div class="h-[250px] w-full">
-        <VChart class="chart" :option="chartOption" autoresize />
-      </div>
+    <CardContent class="h-[300px] w-full p-0 mt-4 flex items-center justify-center">
+      <VChart class="w-full h-full" :option="chartOption" autoresize />
     </CardContent>
   </Card>
 </template>
-
-<style scoped>
-.chart {
-  height: 100%;
-  width: 100%;
-}
-</style>

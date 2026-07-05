@@ -7,11 +7,11 @@ import { BarChart } from 'echarts/charts'
 import { TooltipComponent, GridComponent } from 'echarts/components'
 import { CanvasRenderer } from 'echarts/renderers'
 import { investmentHoldings } from '@/lib/data'
+import { CHART_COLORS, commonTooltip, commonGrid, commonXAxis, commonYAxis, getTranslucentStyle } from '@/lib/chartTheme'
 
 echarts.use([TooltipComponent, GridComponent, BarChart, CanvasRenderer])
 
 const chartOption = computed(() => {
-  // Combine some holdings to show a mix of positive and negative
   const allHoldings = [
     ...investmentHoldings.stocks,
     ...investmentHoldings.etfs,
@@ -23,56 +23,66 @@ const chartOption = computed(() => {
 
   return {
     tooltip: {
+      ...commonTooltip,
       trigger: 'axis',
       axisPointer: { type: 'shadow' },
       formatter: (params: any) => {
         const val = params[0].value
-        const color = val >= 0 ? '#22c55e' : '#ef4444'
-        return `${params[0].name}<br/><span style="color:${color};font-weight:bold;">${val}%</span>`
+        const color = val >= 0 ? CHART_COLORS.positive : CHART_COLORS.negative
+        return `<span style="color:${CHART_COLORS.textSecondary}">${params[0].name}</span><br/><span style="color:${color};font-weight:700;font-size:14px;">${val}%</span>`
       }
     },
     grid: {
+      ...commonGrid,
       top: 30,
-      bottom: 30,
-      left: 40,
-      right: 20
+      left: 16,
+      right: 16,
+      bottom: 0,
+      containLabel: true
     },
     xAxis: {
-      type: 'value',
-      position: 'top',
-      splitLine: {
-        lineStyle: { type: 'dashed', color: '#27272a' }
-      },
-      axisLabel: { formatter: '{value}%', color: '#a1a1aa' }
+      ...commonXAxis,
+      type: 'category',
+      data: names,
+      splitLine: { show: false },
+      axisLabel: { 
+        ...commonXAxis.axisLabel, 
+        color: CHART_COLORS.textSecondary,
+        interval: 0,
+        rotate: 30 // rotate labels slightly if they don't fit
+      }
     },
     yAxis: {
-      type: 'category',
-      axisLine: { show: false },
-      axisLabel: { show: false },
-      axisTick: { show: false },
-      splitLine: { show: false },
-      data: names
+      ...commonYAxis,
+      type: 'value',
+      splitLine: {
+        show: true,
+        lineStyle: { type: 'dashed', color: CHART_COLORS.gridLine }
+      },
+      axisLabel: { ...commonYAxis.axisLabel, formatter: '{value}%' }
     },
     series: [
       {
         name: 'Rendimiento',
         type: 'bar',
-        data: values.map((val, idx) => {
+        barWidth: '40%',
+        data: values.map((val) => {
           const isPos = val >= 0
           return {
             value: val,
-            label: {
-              show: true,
-              position: isPos ? 'right' : 'left',
-              formatter: '{b}',
-              color: '#f4f4f5'
-            },
             itemStyle: {
-              color: isPos ? '#22c55e' : '#14532d',
-              borderRadius: 4
+              ...getTranslucentStyle(isPos ? CHART_COLORS.positive : CHART_COLORS.negative),
+              borderRadius: isPos ? [4, 4, 0, 0] : [0, 0, 4, 4]
             }
           }
-        })
+        }),
+        emphasis: {
+          itemStyle: {
+            color: CHART_COLORS.primary
+          }
+        },
+        animationDuration: 400,
+        animationEasing: 'cubicOut'
       }
     ]
   }
@@ -80,13 +90,17 @@ const chartOption = computed(() => {
 </script>
 
 <template>
-  <Card class="border-border flex flex-col">
-    <CardHeader class="pb-2">
-      <CardTitle class="text-base">Rendimiento de Inversiones</CardTitle>
-      <CardDescription>Ganancias y pérdidas principales (%)</CardDescription>
+  <Card class="border-border/50 bg-[#111111] flex flex-col rounded-[20px] shadow-none overflow-hidden pt-4 sm:pt-6">
+    <CardHeader class="px-4 sm:px-6 pb-2">
+      <CardTitle class="text-base font-normal text-[#a1a1aa]">Rendimiento de Inversiones</CardTitle>
+      <div class="mt-1 flex items-baseline gap-2">
+         <span class="text-3xl font-bold text-white tracking-tight">Top 8</span>
+      </div>
+      <CardDescription class="text-[#6b7280]">Ganancias y pérdidas principales (%)</CardDescription>
     </CardHeader>
-    <CardContent class="h-[300px] w-full p-4">
+    <CardContent class="h-[300px] w-full p-0 mt-4">
       <VChart :option="chartOption" autoresize class="w-full h-full" />
     </CardContent>
   </Card>
 </template>
+

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import {
   Dialog,
   DialogContent,
@@ -15,6 +15,7 @@ import { useUser } from '@/composables/useUser'
 
 const props = defineProps<{
   open: boolean
+  initialCategory?: string
 }>()
 
 const emit = defineEmits<{
@@ -28,6 +29,12 @@ const amount = ref<number | ''>('')
 const type = ref('etfs')
 const currency = ref('MXN')
 const isSubmitting = ref(false)
+
+watch(() => props.open, (isOpen) => {
+  if (isOpen && props.initialCategory) {
+    type.value = props.initialCategory
+  }
+})
 
 const handleSave = async () => {
   if (!symbol.value || !amount.value || !type.value) return
@@ -66,7 +73,7 @@ const handleSave = async () => {
       
       <div class="grid gap-4 py-4">
         
-        <div class="space-y-2">
+        <div class="space-y-2" v-if="!initialCategory">
           <Label>Type</Label>
           <select v-model="type" class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
             <option value="etfs">ETF</option>

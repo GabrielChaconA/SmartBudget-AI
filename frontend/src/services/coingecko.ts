@@ -54,5 +54,20 @@ export const coingeckoService = {
       console.error(`Error fetching CoinGecko market movers:`, error)
       return []
     }
+  },
+  async getUsdMxnRate(): Promise<number> {
+    try {
+      const response = await api.get(`${BASE_URL}/simple/price`, {
+        params: {
+          ids: 'tether',
+          vs_currencies: 'mxn'
+        }
+      })
+      // Tether closely matches USD
+      return response.data?.tether?.mxn || 20.0
+    } catch (error) {
+      console.error(`Error fetching USD to MXN rate from CoinGecko:`, error)
+      return 20.0
+    }
   }
 }

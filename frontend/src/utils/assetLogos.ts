@@ -1,76 +1,78 @@
 import * as icons from 'simple-icons'
 
+const anyIcons = icons as any;
+
 // Mapeo estricto de símbolos (Tickers) a objetos de simple-icons
 const logoMap: Record<string, any> = {
   // Stocks
-  'AAPL': icons.siApple,
-  'GOOGL': icons.siGoogle,
-  'GOOG': icons.siGoogle,
-  'META': icons.siMeta,
-  'MSFT': icons.siMicrosoft,
-  'AMZN': icons.siAmazon,
-  'NVDA': icons.siNvidia,
-  'NFLX': icons.siNetflix,
-  'NETFLIX': icons.siNetflix,
-  'TEFLIX': icons.siNetflix, // misspelling
+  'AAPL': anyIcons.siApple,
+  'GOOGL': anyIcons.siGoogle,
+  'GOOG': anyIcons.siGoogle,
+  'META': anyIcons.siMeta,
+  'MSFT': anyIcons.siMicrosoft,
+  'AMZN': anyIcons.siAmazon,
+  'NVDA': anyIcons.siNvidia,
+  'NFLX': anyIcons.siNetflix,
+  'NETFLIX': anyIcons.siNetflix,
+  'TEFLIX': anyIcons.siNetflix, // misspelling
 
-  'TSLA': icons.siTesla,
-  'TESLA': icons.siTesla,
+  'TSLA': anyIcons.siTesla,
+  'TESLA': anyIcons.siTesla,
 
-  'SPOT': icons.siSpotify,
-  'SPOTIFY': icons.siSpotify,
-  'SPOTIFFY': icons.siSpotify, // misspelling
+  'SPOT': anyIcons.siSpotify,
+  'SPOTIFY': anyIcons.siSpotify,
+  'SPOTIFFY': anyIcons.siSpotify, // misspelling
 
-  'UBER': icons.siUber,
-  'ABNB': icons.siAirbnb,
-  'AIRBNB': icons.siAirbnb,
+  'UBER': anyIcons.siUber,
+  'ABNB': anyIcons.siAirbnb,
+  'AIRBNB': anyIcons.siAirbnb,
 
   // Suscripciones Populares
-  'CRUNCHYROLL': icons.siCrunchyroll,
-  'RUNCHYROLL': icons.siCrunchyroll, // misspelling
+  'CRUNCHYROLL': anyIcons.siCrunchyroll,
+  'RUNCHYROLL': anyIcons.siCrunchyroll, // misspelling
 
-  'ICLOUD': icons.siIcloud,
-  'ICLOUD+': icons.siIcloud,
-  'APPLE': icons.siApple,
-  'APPLE MUSIC': icons.siApple,
-  'APPLE ONE': icons.siApple,
+  'ICLOUD': anyIcons.siIcloud,
+  'ICLOUD+': anyIcons.siIcloud,
+  'APPLE': anyIcons.siApple,
+  'APPLE MUSIC': anyIcons.siApple,
+  'APPLE ONE': anyIcons.siApple,
 
-  'YOUTUBE': icons.siYoutube,
-  'YOUTUBE PREMIUM': icons.siYoutube,
+  'YOUTUBE': anyIcons.siYoutube,
+  'YOUTUBE PREMIUM': anyIcons.siYoutube,
   
-  'AMAZON': icons.siAmazon,
-  'AMAZON PRIME': icons.siAmazon,
+  'AMAZON': anyIcons.siAmazon,
+  'AMAZON PRIME': anyIcons.siAmazon,
 
-  'HBO': icons.siHbo,
-  'HBO MAX': icons.siHbomax,
-  'MAX': icons.siHbomax,
+  'HBO': anyIcons.siHbo,
+  'HBO MAX': anyIcons.siHbomax,
+  'MAX': anyIcons.siHbomax,
 
-  'XBOX': icons.siXbox,
-  'GAME PASS': icons.siXbox,
-  'PLAYSTATION': icons.siPlaystation,
-  'PS PLUS': icons.siPlaystation,
-  'NINTENDO': icons.siNintendo,
+  'XBOX': anyIcons.siXbox,
+  'GAME PASS': anyIcons.siXbox,
+  'PLAYSTATION': anyIcons.siPlaystation,
+  'PS PLUS': anyIcons.siPlaystation,
+  'NINTENDO': anyIcons.siNintendo,
 
   // Criptomonedas (comúnmente usan estos símbolos o IDs)
-  'BTC': icons.siBitcoin,
-  'BITCOIN': icons.siBitcoin,
-  'ETH': icons.siEthereum,
-  'ETHEREUM': icons.siEthereum,
-  'SOL': icons.siSolana,
-  'SOLANA': icons.siSolana,
-  'XRP': icons.siXrp,
-  'DOGE': icons.siDogecoin,
-  'DOGECOIN': icons.siDogecoin,
-  'ADA': icons.siCardano,
-  'CARDANO': icons.siCardano,
-  'AVAX': icons.siAvalanche,
-  'AVALANCHE': icons.siAvalanche,
-  'LINK': icons.siChainlink,
-  'CHAINLINK': icons.siChainlink,
-  'USDT': icons.siTether,
-  'TETHER': icons.siTether,
-  'BNB': icons.siBinance,
-  'BINANCE': icons.siBinance,
+  'BTC': anyIcons.siBitcoin,
+  'BITCOIN': anyIcons.siBitcoin,
+  'ETH': anyIcons.siEthereum,
+  'ETHEREUM': anyIcons.siEthereum,
+  'SOL': anyIcons.siSolana,
+  'SOLANA': anyIcons.siSolana,
+  'XRP': anyIcons.siXrp,
+  'DOGE': anyIcons.siDogecoin,
+  'DOGECOIN': anyIcons.siDogecoin,
+  'ADA': anyIcons.siCardano,
+  'CARDANO': anyIcons.siCardano,
+  'AVAX': anyIcons.siAvalanche,
+  'AVALANCHE': anyIcons.siAvalanche,
+  'LINK': anyIcons.siChainlink,
+  'CHAINLINK': anyIcons.siChainlink,
+  'USDT': anyIcons.siTether,
+  'TETHER': anyIcons.siTether,
+  'BNB': anyIcons.siBinance,
+  'BINANCE': anyIcons.siBinance,
 }
 
 /**

@@ -9,20 +9,30 @@ import { formatCurrency } from '@/lib/data'
 import { useUser } from '@/composables/useUser'
 import { useAuth } from '@/composables/useAuth'
 import EditProfileModal from '@/components/EditProfileModal.vue'
+import AvatarCropModal from '@/components/AvatarCropModal.vue'
 import { ref, computed } from 'vue'
 
 const { user, isLoading: isUserLoading, error: userError, uploadAvatar } = useUser()
 const { logout } = useAuth()
 const isEditModalOpen = ref(false)
+const isCropModalOpen = ref(false)
+const selectedFile = ref<File | null>(null)
 const fileInput = ref<HTMLInputElement | null>(null)
 
-const handleFileChange = async (event: Event) => {
+const handleFileChange = (event: Event) => {
   const target = event.target as HTMLInputElement;
   if (target.files && target.files.length > 0) {
-    const file = target.files[0];
-    await uploadAvatar(file);
+    selectedFile.value = target.files[0];
+    isCropModalOpen.value = true;
     target.value = ''; // reset
   }
+}
+
+const handleCrop = async (blob: Blob) => {
+  isCropModalOpen.value = false;
+  // Convert blob to File so uploadAvatar accepts it
+  const croppedFile = new File([blob], 'avatar-cropped.jpg', { type: blob.type || 'image/jpeg' });
+  await uploadAvatar(croppedFile);
 }
 
 const goals = computed(() => {
@@ -218,5 +228,10 @@ function getInitials(name: string) {
       </div>
     </div>
     <EditProfileModal v-model:open="isEditModalOpen" />
+    <AvatarCropModal 
+      v-model:open="isCropModalOpen" 
+      :file="selectedFile" 
+      @crop="handleCrop" 
+    />
   </DashboardLayout>
 </template>
