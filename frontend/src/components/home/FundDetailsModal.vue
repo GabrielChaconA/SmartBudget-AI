@@ -32,14 +32,18 @@ const emit = defineEmits<{
   'update:open': [value: boolean]
 }>()
 
-const { updateFund, allocateFund, fetchIncomeStats, user } = useUser()
+const { updateFund, allocateFund, fetchIncomeStats, user, freeMoney } = useUser()
 
 const isEditingTotal = ref(false)
 const editBalance = ref(0)
 const isAddingAllocation = ref(false)
 const allocName = ref('')
+const allocIcon = ref('')
 const allocAmount = ref(0)
 const isSubmitting = ref(false)
+const errorMessage = ref('')
+const editingAllocationIdx = ref<number | null>(null)
+const editAllocAmount = ref<number>(0)
 
 const statsData = ref({ weekly: 0, monthly: 0, yearly: 0 })
 
@@ -58,20 +62,19 @@ const fetchAndProcessStats = async () => {
   })
   
   const diffTime = Math.max(maxDate - minDate, 86400000) // at least 1 day
-  const diffWeeks = diffTime / (1000 * 3600 * 24 * 7)
-  const diffMonths = diffTime / (1000 * 3600 * 24 * 30.44)
-  const diffYears = diffTime / (1000 * 3600 * 24 * 365.25)
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
   
   statsData.value = {
-    weekly: diffWeeks > 0 ? totalIncome / Math.max(1, diffWeeks) : totalIncome,
-    monthly: diffMonths > 0 ? totalIncome / Math.max(1, diffMonths) : totalIncome,
-    yearly: diffYears > 0 ? totalIncome / Math.max(1, diffYears) : totalIncome
+    weekly: (totalIncome / diffDays) * 7,
+    monthly: (totalIncome / diffDays) * 30,
+    yearly: (totalIncome / diffDays) * 365,
   }
 }
 
 watch(() => props.open, (isOpen) => {
   if (isOpen) {
     fetchAndProcessStats()
+    errorMessage.value = ''
   }
 })
 
@@ -81,62 +84,155 @@ watch(() => props.fund, (newFund) => {
   }
 })
 
+const maxAllowedBalance = computed(() => {
+  if (!props.fund) return 0
+  return parseFloat(props.fund.balance) + freeMoney.value
+})
+
+const isOverLimit = computed(() => {
+  return editBalance.value > maxAllowedBalance.value
+})
+
 const totalAllocated = computed(() => {
   if (!props.fund?.allocations) return 0
   return props.fund.allocations.reduce((sum: number, a: any) => sum + parseFloat(a.amount), 0)
 })
 
+const fundFreeMoney = computed(() => {
+  if (!props.fund) return 0
+  return parseFloat(props.fund.balance) - totalAllocated.value
+})
+
 const handleSaveTotal = async () => {
   if (!props.fund) return
+  errorMessage.value = ''
+  if (isOverLimit.value) {
+    errorMessage.value = 'El nuevo balance excede tu dinero libre disponible.'
+    return
+  }
   isSubmitting.value = true
   const success = await updateFund(props.fund.id, { balance: editBalance.value })
   if (success) {
     isEditingTotal.value = false
+  } else {
+    errorMessage.value = 'Hubo un error al actualizar la caja.'
   }
   isSubmitting.value = false
 }
 
 const handleAddAllocation = async () => {
   if (!props.fund || !allocName.value || allocAmount.value <= 0) return
+  errorMessage.value = ''
+  
+  if (allocAmount.value > fundFreeMoney.value) {
+    errorMessage.value = 'No tienes suficiente dinero libre en esta caja para esta operación.'
+    return
+  }
+
   isSubmitting.value = true
-  const success = await allocateFund(props.fund.id, allocName.value, allocAmount.value)
+  const success = await allocateFund(props.fund.id, allocName.value, allocAmount.value, allocIcon.value)
   if (success) {
     isAddingAllocation.value = false
     allocName.value = ''
+    allocIcon.value = ''
     allocAmount.value = 0
+  } else {
+    errorMessage.value = 'Hubo un error al guardar la asignación.'
   }
   isSubmitting.value = false
 }
 
+const handleUpdateAllocation = async (idx: number, alloc: any) => {
+  if (editAllocAmount.value <= 0) return
+  isSubmitting.value = true
+  errorMessage.value = ''
+  
+  const totalAllocatedExceptThis = props.fund.allocations.reduce((sum: number, a: any, i: number) => {
+    return i === idx ? sum : sum + parseFloat(a.amount)
+  }, 0)
+  
+  const remaining = parseFloat(props.fund.balance) - totalAllocatedExceptThis
+  
+  if (editAllocAmount.value > remaining) {
+    errorMessage.value = 'Monto supera el límite disponible en la caja.'
+    isSubmitting.value = false
+    return
+  }
+
+  const success = await allocateFund(props.fund.id, alloc.category_name, editAllocAmount.value, alloc.category_icon || '')
+  isSubmitting.value = false
+  if (success) {
+    editingAllocationIdx.value = null
+  } else {
+    errorMessage.value = 'Error al actualizar sub-monto'
+  }
+}
+
+const startEditAllocation = (idx: number, alloc: any) => {
+  editingAllocationIdx.value = idx
+  editAllocAmount.value = parseFloat(alloc.amount)
+}
+
+import { CHART_COLORS, commonTooltip, commonGrid, commonXAxis, commonYAxis, getTranslucentStyle } from '@/lib/chartTheme'
+
 const chartOption = computed(() => {
   return {
-    tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
-    grid: { left: '3%', right: '4%', bottom: '10%', top: '10%', containLabel: true },
+    backgroundColor: 'transparent',
+    tooltip: { 
+      ...commonTooltip,
+      trigger: 'axis', 
+      axisPointer: { type: 'shadow' },
+      formatter: (params: any) => {
+        const val = new Intl.NumberFormat('en-US', {
+          style: 'currency',
+          currency: 'USD'
+        }).format(params[0].value)
+        return `<span style="color:${CHART_COLORS.textSecondary}">${params[0].name}</span><br/><span style="color:${CHART_COLORS.textPrimary};font-weight:700;font-size:14px;">${val}</span>`
+      }
+    },
+    grid: { 
+      ...commonGrid,
+      left: 60,
+      bottom: 30,
+      top: 20
+    },
     xAxis: {
+      ...commonXAxis,
       type: 'category',
       data: ['Weekly', 'Monthly', 'Yearly'],
-      axisLabel: { color: '#a1a1aa' },
-      axisLine: { lineStyle: { color: '#3f3f46' } },
     },
     yAxis: {
+      ...commonYAxis,
       type: 'value',
-      axisLabel: { color: '#a1a1aa', formatter: (val: number) => `$${val}` },
-      splitLine: { lineStyle: { color: '#27272a' } },
+      axisLabel: { 
+        ...commonYAxis.axisLabel, 
+        formatter: (val: number) => `$${new Intl.NumberFormat('en-US', { notation: 'compact' }).format(val)}` 
+      },
     },
     series: [
       {
         name: 'Average Income',
         type: 'bar',
+        barWidth: '40%',
         data: [
           Math.round(statsData.value.weekly),
           Math.round(statsData.value.monthly),
           Math.round(statsData.value.yearly)
         ],
-        itemStyle: { color: '#3b82f6', borderRadius: [4, 4, 0, 0] }
+        itemStyle: { 
+          ...getTranslucentStyle(CHART_COLORS.primary), 
+          borderRadius: [4, 4, 0, 0] 
+        },
+        emphasis: {
+          itemStyle: { color: '#45b8ff' }
+        },
+        animationDuration: 400,
+        animationEasing: 'cubicOut'
       }
     ]
   }
 })
+
 
 </script>
 
@@ -144,11 +240,15 @@ const chartOption = computed(() => {
   <Dialog :open="open" @update:open="$emit('update:open', $event)">
     <DialogContent class="sm:max-w-[900px]">
       <DialogHeader>
-        <DialogTitle>{{ fund?.name || 'Fund Details' }}</DialogTitle>
+        <DialogTitle>{{ fund?.icon ? fund.icon + ' ' : '' }}{{ fund?.name || 'Fund Details' }}</DialogTitle>
         <DialogDescription>
           Manage your fund balance, view internal allocations, and analyze average income.
         </DialogDescription>
       </DialogHeader>
+
+      <div v-if="errorMessage" class="mt-4 p-3 text-sm rounded-md bg-destructive/15 text-destructive border border-destructive/20">
+        {{ errorMessage }}
+      </div>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-8 py-4" v-if="fund">
         
@@ -162,17 +262,25 @@ const chartOption = computed(() => {
               </Button>
             </div>
             
-            <div v-if="isEditingTotal" class="flex items-center gap-2">
-              <Input type="number" v-model="editBalance" class="w-full" step="0.01" />
-              <Button size="icon" variant="default" @click="handleSaveTotal" :disabled="isSubmitting">
-                <Check class="size-4" />
-              </Button>
-              <Button size="icon" variant="ghost" @click="isEditingTotal = false">
-                <X class="size-4" />
-              </Button>
+            <div v-if="isEditingTotal" class="flex flex-col gap-2">
+              <div class="flex items-center gap-2">
+                <Input type="number" v-model="editBalance" class="w-full" step="0.01" />
+                <Button size="icon" variant="default" @click="handleSaveTotal" :disabled="isSubmitting || isOverLimit">
+                  <Check class="size-4" />
+                </Button>
+                <Button size="icon" variant="ghost" @click="isEditingTotal = false">
+                  <X class="size-4" />
+                </Button>
+              </div>
+              <p v-if="isOverLimit" class="text-xs text-destructive">
+                Cannot exceed free money limit ({{ formatCurrency(maxAllowedBalance, user?.currency) }})
+              </p>
             </div>
             <div v-else>
               <p class="text-3xl font-bold">{{ formatCurrency(fund.balance, user?.currency) }}</p>
+              <p class="mt-2 text-xs font-medium text-muted-foreground flex items-center gap-1">
+                Disponible para agregar: <span class="text-foreground">{{ formatCurrency(freeMoney, user?.currency) }}</span> de dinero libre
+              </p>
             </div>
           </div>
 
@@ -184,23 +292,44 @@ const chartOption = computed(() => {
               </Button>
             </div>
 
-            <div v-if="isAddingAllocation" class="flex items-end gap-2 mb-4 p-3 rounded-lg border border-border bg-muted/50">
-              <div class="flex-1 space-y-1">
-                <Label class="text-xs">Category</Label>
-                <Input v-model="allocName" placeholder="e.g., Water" class="h-8 text-sm" />
+            <div v-if="isAddingAllocation" class="flex flex-col gap-2 mb-4 p-3 rounded-lg border border-border bg-muted/50">
+              <div class="flex items-end gap-2">
+                <div class="w-12 space-y-1">
+                  <Label class="text-xs">Emoji</Label>
+                  <Input v-model="allocIcon" placeholder="🛒" class="h-8 text-sm text-center px-1" maxlength="5" />
+                </div>
+                <div class="flex-1 space-y-1">
+                  <Label class="text-xs">Category</Label>
+                  <Input v-model="allocName" placeholder="e.g., Water" class="h-8 text-sm" />
+                </div>
+                <div class="w-32 space-y-1 relative">
+                  <Label class="text-xs">Amount</Label>
+                  <Input v-model="allocAmount" type="number" class="h-8 text-sm pr-10" />
+                  <button class="absolute bottom-1 right-1 text-[10px] font-bold text-muted-foreground hover:text-foreground bg-muted px-1.5 py-0.5 rounded" @click="allocAmount = fundFreeMoney">MAX</button>
+                </div>
+                <Button size="sm" class="h-8" @click="handleAddAllocation" :disabled="isSubmitting || !allocName || allocAmount <= 0">Add</Button>
+                <Button size="sm" variant="ghost" class="h-8 px-2" @click="isAddingAllocation = false">Cancel</Button>
               </div>
-              <div class="w-24 space-y-1">
-                <Label class="text-xs">Amount</Label>
-                <Input v-model="allocAmount" type="number" class="h-8 text-sm" />
-              </div>
-              <Button size="sm" class="h-8" @click="handleAddAllocation" :disabled="isSubmitting || !allocName || allocAmount <= 0">Add</Button>
-              <Button size="sm" variant="ghost" class="h-8 px-2" @click="isAddingAllocation = false">Cancel</Button>
+              <p class="text-[11px] text-muted-foreground text-right mt-1">Disponible en caja: <span class="font-bold text-foreground">{{ formatCurrency(fundFreeMoney, user?.currency) }}</span></p>
             </div>
 
             <div class="space-y-3">
-              <div v-for="(alloc, idx) in fund.allocations" :key="idx" class="flex items-center justify-between">
-                <p class="text-sm font-medium">{{ alloc.category_name }}</p>
-                <p class="text-sm font-semibold">{{ formatCurrency(alloc.amount, user?.currency) }}</p>
+              <div v-for="(alloc, idx) in fund.allocations" :key="idx" class="flex items-center justify-between group">
+                <p class="text-sm font-medium"><span v-if="alloc.category_icon" class="mr-1">{{ alloc.category_icon }}</span>{{ alloc.category_name }}</p>
+                
+                <div v-if="editingAllocationIdx === idx" class="flex items-center gap-1">
+                  <Input type="number" v-model="editAllocAmount" class="h-6 w-24 text-xs px-1 text-right" step="0.01" />
+                  <Button size="icon" variant="ghost" class="h-6 w-6" @click="handleUpdateAllocation(idx, alloc)">
+                    <Check class="size-4 text-green-500" />
+                  </Button>
+                  <Button size="icon" variant="ghost" class="h-6 w-6" @click="editingAllocationIdx = null">
+                    <X class="size-4 text-muted-foreground" />
+                  </Button>
+                </div>
+                <div v-else class="flex items-center gap-2 cursor-pointer hover:bg-muted/50 rounded px-1 -mx-1 transition-colors" @click="startEditAllocation(idx, alloc)">
+                  <p class="text-sm font-semibold">{{ formatCurrency(Number(alloc.amount), user?.currency) }}</p>
+                  <Pencil class="size-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                </div>
               </div>
               <p v-if="!fund.allocations || fund.allocations.length === 0" class="text-sm text-muted-foreground text-center py-2">
                 No sub-amounts added yet.

@@ -11,9 +11,9 @@ import {
 </script>
 
 <template>
-  <div class="flex flex-col gap-4 p-6 bg-card rounded-xl border border-border">
-    <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
-      <div class="space-y-1">
+  <div class="p-6 bg-card rounded-xl border border-border">
+    <div class="flex flex-wrap items-end gap-4">
+      <div class="space-y-1 w-40">
         <Label class="text-xs text-muted-foreground">Date Range</Label>
         <Select defaultValue="last-6-months">
           <SelectTrigger>
@@ -28,7 +28,7 @@ import {
         </Select>
       </div>
       
-      <div class="space-y-1">
+      <div class="space-y-1 w-40">
         <Label class="text-xs text-muted-foreground">Category</Label>
         <Select defaultValue="all">
           <SelectTrigger>
@@ -43,7 +43,7 @@ import {
         </Select>
       </div>
       
-      <div class="space-y-1">
+      <div class="space-y-1 w-40">
         <Label class="text-xs text-muted-foreground">Account</Label>
         <Select defaultValue="all">
           <SelectTrigger>
@@ -58,7 +58,7 @@ import {
         </Select>
       </div>
 
-      <div class="space-y-1">
+      <div class="space-y-1 w-40">
         <Label class="text-xs text-muted-foreground">Income vs Expenses</Label>
         <Select defaultValue="both">
           <SelectTrigger>
@@ -72,7 +72,7 @@ import {
         </Select>
       </div>
 
-      <div class="space-y-1">
+      <div class="space-y-1 w-40">
         <Label class="text-xs text-muted-foreground">Investment Account</Label>
         <Select defaultValue="all">
           <SelectTrigger>
@@ -86,10 +86,11 @@ import {
           </SelectContent>
         </Select>
       </div>
-    </div>
-    <div class="flex items-center gap-2 mt-2">
-      <Button class="bg-success text-success-foreground hover:bg-success/90">Apply</Button>
-      <Button variant="ghost">Reset</Button>
+
+      <div class="flex items-center gap-2">
+        <Button class="bg-[#16a34a] text-white hover:bg-[#15803d]">Apply</Button>
+        <Button variant="ghost">Reset</Button>
+      </div>
     </div>
   </div>
 </template>

@@ -10,6 +10,7 @@ import {
 import { CanvasRenderer } from 'echarts/renderers'
 import VChart from 'vue-echarts'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { CHART_COLORS, commonTooltip, commonGrid, commonXAxis, commonYAxis, commonLineSeriesProps, getAreaGradient } from '@/lib/chartTheme'
 
 echarts.use([
   TitleComponent,
@@ -19,59 +20,64 @@ echarts.use([
   CanvasRenderer
 ])
 
+const chartData = [16, 18, 22, 19, 23, 25]
+const currentRate = chartData[chartData.length - 1]
+
 const chartOption = ref({
   backgroundColor: 'transparent',
   tooltip: {
+    ...commonTooltip,
     trigger: 'axis',
-    formatter: '{b}: {c}%'
+    formatter: (params: any) => {
+      return `<span style="color:${CHART_COLORS.textSecondary}">${params[0].name}</span><br/><span style="color:${CHART_COLORS.textPrimary};font-weight:700;font-size:14px;">${params[0].value}%</span>`
+    },
+    axisPointer: {
+      type: 'line',
+      lineStyle: { color: 'rgba(255,255,255,0.1)', width: 1 }
+    }
   },
-  grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
+  grid: {
+    ...commonGrid,
+    left: 40,
+    bottom: 20
+  },
   xAxis: {
+    ...commonXAxis,
     type: 'category',
-    data: ['Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep'],
-    axisLine: { show: false },
-    axisTick: { show: false },
-    axisLabel: { color: '#a1a1aa' }
+    data: ['Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep']
   },
   yAxis: {
+    ...commonYAxis,
     type: 'value',
-    splitLine: { lineStyle: { color: '#27272a', type: 'dashed' } },
     axisLabel: {
-      color: '#a1a1aa',
+      ...commonYAxis.axisLabel,
       formatter: '{value}%'
     }
   },
   series: [
     {
-      data: [16, 18, 22, 19, 23, 25],
+      data: chartData,
       type: 'line',
-      smooth: true,
-      symbol: 'circle',
-      symbolSize: 6,
-      itemStyle: { color: '#22c55e', borderColor: '#18181b', borderWidth: 1 },
-      lineStyle: { color: '#22c55e', width: 2 }
+      ...commonLineSeriesProps,
+      areaStyle: {
+        color: getAreaGradient()
+      }
     }
   ]
 })
 </script>
 
 <template>
-  <Card class="bg-card border-border">
-    <CardHeader>
-      <CardTitle class="text-foreground">Monthly Savings Rate</CardTitle>
-      <CardDescription>Percentage of income saved</CardDescription>
-    </CardHeader>
-    <CardContent>
-      <div class="h-[250px] w-full">
-        <VChart class="chart" :option="chartOption" autoresize />
+  <Card class="border-border/50 bg-[#111111] flex flex-col rounded-[20px] shadow-none p-2 sm:p-4">
+    <CardHeader class="pb-2">
+      <CardTitle class="text-base font-normal text-[#a1a1aa]">Monthly Savings Rate</CardTitle>
+      <div class="mt-1 flex items-baseline gap-2">
+         <span class="text-3xl font-bold text-white tracking-tight">{{ currentRate }}%</span>
       </div>
+      <CardDescription class="text-[#6b7280]">Percentage of income saved</CardDescription>
+    </CardHeader>
+    <CardContent class="h-[300px] w-full p-0 mt-4">
+      <VChart class="w-full h-full" :option="chartOption" autoresize />
     </CardContent>
   </Card>
 </template>
-
-<style scoped>
-.chart {
-  height: 100%;
-  width: 100%;
-}
-</style>

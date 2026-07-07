@@ -10,8 +10,9 @@ withDefaults(defineProps<{
 </script>
 
 <template>
-  <div :class="cn('flex items-center gap-2.5', $props.class)">
-    <span v-if="showWordmark" class="text-base font-semibold tracking-tight text-foreground">
+  <div :class="cn('flex items-center gap-3', $props.class)">
+    <img src="/logo-minimalista.jpg" alt="SmartBudget Logo" class="h-7 w-auto object-contain" />
+    <span v-if="showWordmark" class="text-base font-semibold tracking-tight text-foreground whitespace-nowrap">
       SmartBudget <span class="text-green-500">AI</span>
     </span>
   </div>

@@ -37,18 +37,6 @@ const openFundDetails = (fund: any) => {
     </div>
     
     <div v-if="user?.funds?.length > 0" class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-      <!-- New Fund Card inside the grid -->
-      <Card 
-        class="flex border-border border-dashed cursor-pointer hover:border-primary/50 transition-colors items-center justify-center bg-muted/10 min-h-[140px]" 
-        @click="isCreateModalOpen = true"
-      >
-        <CardContent class="flex flex-col items-center justify-center p-5 text-center h-full w-full opacity-60 hover:opacity-100 transition-opacity">
-          <div class="flex size-10 items-center justify-center rounded-xl bg-accent mb-3 text-muted-foreground">
-            <Plus class="size-5" />
-          </div>
-          <p class="text-sm font-medium text-muted-foreground">New Fund</p>
-        </CardContent>
-      </Card>
 
       <Card
         v-for="fund in user?.funds?.slice(0, 3)"
@@ -59,7 +47,8 @@ const openFundDetails = (fund: any) => {
         <CardContent class="flex flex-col gap-4 p-5">
           <div class="flex items-center justify-between">
             <div class="flex size-10 items-center justify-center rounded-xl bg-accent text-accent-foreground" :style="fund.color ? { color: fund.color } : {}">
-              <Wallet class="size-5" />
+              <span v-if="fund.icon" class="text-xl">{{ fund.icon }}</span>
+              <Wallet v-else class="size-5" />
             </div>
             <Button variant="ghost" size="icon" @click.stop="toggleItemVisibility(`fund_${fund.id}`)" class="h-8 w-8 text-muted-foreground hover:text-foreground">
               <Eye v-if="isItemVisible(`fund_${fund.id}`)" class="size-4" />
@@ -73,6 +62,19 @@ const openFundDetails = (fund: any) => {
               <span v-else>••••••</span>
             </p>
           </div>
+        </CardContent>
+      </Card>
+
+      <!-- New Fund Card inside the grid -->
+      <Card 
+        class="flex border-border border-dashed cursor-pointer hover:border-primary/50 transition-colors items-center justify-center bg-muted/10 min-h-[140px]" 
+        @click="isCreateModalOpen = true"
+      >
+        <CardContent class="flex flex-col items-center justify-center p-5 text-center h-full w-full opacity-60 hover:opacity-100 transition-opacity">
+          <div class="flex size-10 items-center justify-center rounded-xl bg-accent mb-3 text-muted-foreground">
+            <Plus class="size-5" />
+          </div>
+          <p class="text-sm font-medium text-muted-foreground">New Fund</p>
         </CardContent>
       </Card>
     </div>

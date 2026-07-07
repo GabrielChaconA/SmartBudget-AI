@@ -4,25 +4,12 @@ import { Card, CardContent } from '@/components/ui/card'
 import { formatCurrency } from '@/lib/data'
 import { useUser } from '@/composables/useUser'
 import { TrendingUp, Layers } from '@lucide/vue'
-import { RouterLink } from 'vue-router'
+import { RouterLink, useRouter } from 'vue-router'
 
-const { user } = useUser()
+const { user, totalInvestmentsAmount } = useUser()
+const router = useRouter()
 
-const getExchangeRate = () => 20.0
-
-const totalInvestments = computed(() => {
-  if (!user.value?.investments) return 0
-  
-  return user.value.investments.reduce((sum: number, h: any) => {
-    let baseValue = Number(h.quantity);
-    if (h.currency === 'USD' && user.value?.currency === 'MXN') {
-      baseValue *= getExchangeRate();
-    } else if (h.currency === 'MXN' && user.value?.currency === 'USD') {
-      baseValue /= getExchangeRate();
-    }
-    return sum + baseValue
-  }, 0)
-})
+const totalInvestments = computed(() => totalInvestmentsAmount.value)
 
 const numInvestments = computed(() => user.value?.investments?.length || 0)
 </script>
@@ -36,7 +23,7 @@ const numInvestments = computed(() => user.value?.investments?.length || 0)
       </RouterLink>
     </div>
     
-    <Card class="border-border cursor-pointer hover:border-primary/50 transition-colors bg-gradient-to-br from-card to-card/50">
+    <Card @click="router.push('/investments')" class="border-border cursor-pointer hover:border-primary/50 transition-colors bg-gradient-to-br from-card to-card/50">
       <CardContent class="flex flex-col gap-4 p-5">
         <div class="flex items-center justify-between">
           <div class="flex size-10 items-center justify-center rounded-xl bg-blue-500/15 text-blue-500">
@@ -47,7 +34,7 @@ const numInvestments = computed(() => user.value?.investments?.length || 0)
           </span>
         </div>
         <div>
-          <p class="text-sm text-muted-foreground">Total Invested Capital</p>
+          <p class="text-sm text-muted-foreground">Current Value</p>
           <p class="mt-1 text-2xl font-semibold tracking-tight text-foreground">
             {{ formatCurrency(totalInvestments, user?.currency || 'MXN') }}
           </p>

@@ -1,15 +1,18 @@
 <script setup lang="ts">
+import { ref } from 'vue'
 import DashboardLayout from '@/components/DashboardLayout.vue'
 import NetWorthCard from '@/components/home/NetWorthCard.vue'
 import SummaryCards from '@/components/home/SummaryCards.vue'
 import InvestmentsCard from '@/components/home/InvestmentsCard.vue'
 import UpcomingPayments from '@/components/home/UpcomingPayments.vue'
 import AiInsightCard from '@/components/home/AiInsightCard.vue'
+import AddMoneyModal from '@/components/home/AddMoneyModal.vue'
 import { useUser } from '@/composables/useUser'
-import { Eye, EyeOff } from '@lucide/vue'
+import { Eye, EyeOff, Plus } from '@lucide/vue'
 import { Button } from '@/components/ui/button'
 
 const { user, isBalancesVisible, toggleBalances } = useUser()
+const isAddMoneyModalOpen = ref(false)
 </script>
 
 <template>
@@ -24,21 +27,27 @@ const { user, isBalancesVisible, toggleBalances } = useUser()
             Here's a clear look at your finances today.
           </p>
         </div>
-        <Button variant="ghost" size="icon" @click="toggleBalances" class="text-muted-foreground hover:text-foreground">
-          <Eye v-if="isBalancesVisible" class="size-5" />
-          <EyeOff v-else class="size-5" />
-        </Button>
+        <div class="flex items-center gap-2">
+          <Button variant="outline" @click="isAddMoneyModalOpen = true" class="rounded-full shadow-sm">
+            <Plus class="mr-2 size-4" /> Agregar Dinero
+          </Button>
+          <Button variant="ghost" size="icon" @click="toggleBalances" class="text-muted-foreground hover:text-foreground">
+            <Eye v-if="isBalancesVisible" class="size-5" />
+            <EyeOff v-else class="size-5" />
+          </Button>
+        </div>
       </div>
+      
+      <AddMoneyModal v-model:open="isAddMoneyModalOpen" />
 
       <NetWorthCard />
       
-      <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        <div class="lg:col-span-3">
-          <SummaryCards />
-        </div>
-        <div class="lg:col-span-1">
-          <InvestmentsCard />
-        </div>
+      <div class="w-full">
+        <SummaryCards />
+      </div>
+
+      <div class="w-full">
+        <InvestmentsCard />
       </div>
 
       <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">

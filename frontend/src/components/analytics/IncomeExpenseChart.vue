@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import * as echarts from 'echarts/core'
 import { BarChart } from 'echarts/charts'
 import {
@@ -11,6 +11,7 @@ import {
 import { CanvasRenderer } from 'echarts/renderers'
 import VChart from 'vue-echarts'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { CHART_COLORS, commonTooltip, commonGrid, commonXAxis, commonYAxis } from '@/lib/chartTheme'
 
 echarts.use([
   TitleComponent,
@@ -21,36 +22,38 @@ echarts.use([
   CanvasRenderer
 ])
 
+const incomeData = [45000, 48000, 47000, 50000, 48000, 52000]
+const expenseData = [18000, 19000, 17500, 16000, 18500, 19000]
+
+const totalIncome = computed(() => incomeData.reduce((a, b) => a + b, 0))
+const totalExpense = computed(() => expenseData.reduce((a, b) => a + b, 0))
+
 const chartOption = ref({
   backgroundColor: 'transparent',
   tooltip: {
+    ...commonTooltip,
     trigger: 'axis',
-    axisPointer: {
-      type: 'shadow'
-    }
+    axisPointer: { type: 'shadow' }
   },
   legend: {
     data: ['Income', 'Expenses'],
-    textStyle: { color: '#a1a1aa' },
-    bottom: 0
+    textStyle: { color: CHART_COLORS.textSecondary },
+    bottom: 0,
+    icon: 'circle',
+    itemWidth: 8,
+    itemHeight: 8
   },
-  grid: {
-    left: '3%',
-    right: '4%',
-    bottom: '10%',
-    containLabel: true
-  },
+  grid: commonGrid,
   xAxis: {
+    ...commonXAxis,
     type: 'category',
-    data: ['Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep'],
-    axisLine: { lineStyle: { color: '#3f3f46' } },
-    axisLabel: { color: '#a1a1aa' }
+    data: ['Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep']
   },
   yAxis: {
+    ...commonYAxis,
     type: 'value',
-    splitLine: { lineStyle: { color: '#27272a' } },
     axisLabel: {
-      color: '#a1a1aa',
+      ...commonYAxis.axisLabel,
       formatter: (value: number) => `$${value}`
     }
   },
@@ -58,42 +61,41 @@ const chartOption = ref({
     {
       name: 'Income',
       type: 'bar',
-      data: [45000, 48000, 47000, 50000, 48000, 52000],
+      data: incomeData,
       itemStyle: {
-        color: '#22c55e',
+        color: CHART_COLORS.positive,
         borderRadius: [4, 4, 0, 0]
-      }
+      },
+      barWidth: '30%'
     },
     {
       name: 'Expenses',
       type: 'bar',
-      data: [18000, 19000, 17500, 16000, 18500, 19000],
+      data: expenseData,
       itemStyle: {
-        color: '#a1a1aa',
+        color: '#52525b', // dark gray
         borderRadius: [4, 4, 0, 0]
-      }
+      },
+      barWidth: '30%'
     }
-  ]
+  ],
+  animationDuration: 1000,
+  animationEasing: 'cubicOut'
 })
 </script>
 
 <template>
-  <Card class="bg-card border-border">
-    <CardHeader>
-      <CardTitle class="text-foreground">Income vs Expenses</CardTitle>
-      <CardDescription>Monthly comparison</CardDescription>
-    </CardHeader>
-    <CardContent>
-      <div class="h-[300px] w-full">
-        <VChart class="chart" :option="chartOption" autoresize />
+  <Card class="border-border/50 bg-[#111111] flex flex-col rounded-[20px] shadow-none p-2 sm:p-4">
+    <CardHeader class="pb-2">
+      <CardTitle class="text-base font-normal text-[#a1a1aa]">Income vs Expenses</CardTitle>
+      <div class="mt-1 flex items-baseline gap-2">
+         <span class="text-3xl font-bold text-white tracking-tight">${{ new Intl.NumberFormat('en-US').format(totalIncome) }}</span>
+         <span class="text-sm font-medium text-[#6b7280]">vs ${{ new Intl.NumberFormat('en-US').format(totalExpense) }}</span>
       </div>
+      <CardDescription class="text-[#6b7280]">Monthly comparison</CardDescription>
+    </CardHeader>
+    <CardContent class="h-[300px] w-full p-0 mt-4">
+      <VChart class="w-full h-full" :option="chartOption" autoresize />
     </CardContent>
   </Card>
 </template>
-
-<style scoped>
-.chart {
-  height: 100%;
-  width: 100%;
-}
-</style>

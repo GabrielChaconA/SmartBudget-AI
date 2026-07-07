@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useRoute } from 'vue-router'
+import { onMounted } from 'vue'
 import {
   LayoutDashboard,
   ChartColumnIncreasing,
@@ -32,8 +33,12 @@ import { useRouter } from 'vue-router'
 
 const route = useRoute()
 const router = useRouter()
-const { user } = useUser()
+const { user, notifications, fetchNotifications } = useUser()
 const { logout } = useAuth()
+
+onMounted(() => {
+  fetchNotifications()
+})
 
 const navItems = [
   { href: "/", label: "Home", short: "Home", icon: LayoutDashboard },
@@ -87,15 +92,33 @@ const isActive = (href: string) => route.path === href
           />
         </div>
         <div class="ml-auto flex items-center gap-1.5">
-          <Button
-            variant="ghost"
-            size="icon"
-            class="relative rounded-xl"
-            aria-label="Notifications"
-          >
-            <Bell class="size-5" />
-            <span class="absolute right-2 top-2 size-2 rounded-full bg-primary ring-2 ring-background" />
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger as-child>
+              <Button
+                variant="ghost"
+                size="icon"
+                class="relative rounded-xl"
+                aria-label="Notifications"
+              >
+                <Bell class="size-5" />
+                <span v-if="notifications.length > 0" class="absolute right-2 top-2 size-2 rounded-full bg-primary ring-2 ring-background" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" class="w-80">
+              <DropdownMenuLabel>Notificaciones</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <div v-if="notifications.length === 0" class="p-4 text-center text-sm text-muted-foreground">
+                No tienes notificaciones recientes.
+              </div>
+              <div v-else class="max-h-[300px] overflow-y-auto">
+                <DropdownMenuItem v-for="notif in notifications" :key="notif.id" class="flex flex-col items-start p-3">
+                  <div class="font-medium text-sm">{{ notif.title }}</div>
+                  <div class="text-xs text-muted-foreground mt-1">{{ notif.message }}</div>
+                  <div class="text-[10px] text-muted-foreground mt-2">{{ new Date(notif.created_at).toLocaleString() }}</div>
+                </DropdownMenuItem>
+              </div>
+            </DropdownMenuContent>
+          </DropdownMenu>
 
           <DropdownMenu v-if="user">
             <DropdownMenuTrigger as-child>
