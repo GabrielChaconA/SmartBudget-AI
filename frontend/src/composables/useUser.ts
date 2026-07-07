@@ -1,5 +1,6 @@
 import { ref, onMounted, computed } from 'vue';
 import axios from 'axios';
+import { exchangeRateService } from '@/services/exchangeRate';
 
 export interface UserProfile {
   id?: number;
@@ -19,6 +20,11 @@ const isInitialized = ref(false);
 const isBalancesVisible = ref(true);
 const hiddenBalances = ref<Record<string, boolean>>({});
 const notifications = ref<any[]>([]);
+const globalExchangeRate = ref(20.0);
+const liveInvestmentsAmount = ref<number | null>(null);
+
+import { finnhubService } from '@/services/finnhub';
+import { oddsApiService } from '@/services/oddsApi';
 
 export function clearUserCache() {
   user.value = null;
@@ -28,8 +34,84 @@ export function clearUserCache() {
 }
 
 export function useUser() {
-  const fetchUser = async () => {
-    if (isInitialized.value) return;
+  const fetchLiveInvestmentsAmount = async () => {
+    if (!user.value?.investments || user.value.investments.length === 0) {
+      liveInvestmentsAmount.value = 0;
+      return;
+    }
+    try {
+      const etfs = user.value.investments.filter((i: any) => i.type === 'etfs');
+      const stocks = user.value.investments.filter((i: any) => i.type === 'stocks');
+      const cryptos = user.value.investments.filter((i: any) => i.type === 'crypto');
+      const bets = user.value.investments.filter((i: any) => i.type === 'bets');
+      
+      const cryptoIds = cryptos.map((c: any) => c.symbol.toLowerCase());
+
+      // Per-symbol safe fetch — one failure doesn't wipe everything out
+      const fetchQuoteSafe = async (h: any) => {
+        try {
+          const q = await finnhubService.getQuote(h.symbol);
+          return { h, q };
+        } catch {
+          return { h, q: { c: h.average_price || 0, dp: 0, d: 0, h: 0, l: 0, o: 0, pc: 0 } };
+        }
+      };
+      
+      const [etfRes, stockRes, cryptoRes, oddsRes] = await Promise.allSettled([
+        Promise.all(etfs.map(fetchQuoteSafe)),
+        Promise.all(stocks.map(fetchQuoteSafe)),
+        cryptoIds.length > 0 ? coingeckoService.getMarkets(cryptoIds) : Promise.resolve([]),
+        oddsApiService.getUpcomingOdds()
+      ]);
+      
+      let totalVal = 0;
+      const userCurrency = user.value?.currency || 'MXN';
+      
+      const processVal = (h: any, currentPrice: number) => {
+        if (!currentPrice || currentPrice <= 0) return;
+        let val = h.quantity * currentPrice;
+        if (h.currency === 'USD' && userCurrency === 'MXN') val *= globalExchangeRate.value;
+        if (h.currency === 'MXN' && userCurrency === 'USD') val /= globalExchangeRate.value;
+        totalVal += val;
+      };
+      
+      if (etfRes.status === 'fulfilled') {
+        etfRes.value.forEach((item: any) => processVal(item.h, item.q.c));
+      }
+      if (stockRes.status === 'fulfilled') {
+        stockRes.value.forEach((item: any) => processVal(item.h, item.q.c));
+      }
+      if (cryptoRes.status === 'fulfilled' && cryptoRes.value.length > 0) {
+        cryptos.forEach((h: any) => {
+          const market = cryptoRes.value.find((m: any) => m.symbol.toLowerCase() === h.symbol.toLowerCase());
+          processVal(h, market?.current_price || h.average_price);
+        });
+      } else {
+        // fallback: use average_price when CoinGecko fails
+        cryptos.forEach((h: any) => processVal(h, h.average_price));
+      }
+      if (oddsRes.status === 'fulfilled' && oddsRes.value.length > 0) {
+        bets.forEach((h: any, index: number) => {
+          const event = oddsRes.value[index % oddsRes.value.length];
+          const homeOdds = event?.bookmakers?.[0]?.markets?.[0]?.outcomes?.[0]?.price || 1.0;
+          processVal(h, homeOdds);
+        });
+      } else {
+        bets.forEach((h: any) => processVal(h, h.average_price || 1));
+      }
+      
+      liveInvestmentsAmount.value = totalVal;
+    } catch (e) {
+      console.error('Error fetching live investments', e);
+      // Don't reset liveInvestmentsAmount — keep the last known value
+    }
+  };
+
+  const fetchUser = async (force = false) => {
+    if (isInitialized.value && !force) {
+      fetchLiveInvestmentsAmount();
+      return;
+    }
     
     isLoading.value = true;
     error.value = null;
@@ -37,6 +119,12 @@ export function useUser() {
       const response = await axios.get('/api/user');
       user.value = response.data;
       isInitialized.value = true;
+      // Auto-fix: sync Cartera balance with sum of funds (fixes negative free money)
+      axios.post('/api/reset-free-money').catch(() => {});
+      exchangeRateService.getUsdMxnRate().then(rate => {
+        globalExchangeRate.value = rate;
+        fetchLiveInvestmentsAmount();
+      }).catch(() => {});
     } catch (err: any) {
       error.value = err.response?.data?.message || 'Failed to fetch user data';
       console.error('Error fetching user:', err);
@@ -134,19 +222,33 @@ export function useUser() {
 
   const addInvestment = async (data: any) => {
     try {
-      const response = await axios.post('/api/investments', data);
-      if (user.value) {
-        if (!user.value.investments) {
-          user.value.investments = [];
-        }
-        user.value.investments.push({
-          ...data,
-          id: response.data.id,
-        });
-      }
+      await axios.post('/api/investments', data);
+      fetchUser(true);
       return true;
     } catch (err) {
       console.error('Error adding investment', err);
+      return false;
+    }
+  };
+
+  const updateInvestment = async (id: number, payload: any) => {
+    try {
+      await axios.put(`/api/investments/${id}`, payload);
+      fetchUser(true);
+      return true;
+    } catch (err) {
+      console.error('Error updating investment', err);
+      return false;
+    }
+  };
+
+  const deleteInvestment = async (id: number, payload: any = {}) => {
+    try {
+      await axios.delete(`/api/investments/${id}`, { data: payload });
+      fetchUser(true);
+      return true;
+    } catch (err) {
+      console.error('Error deleting investment', err);
       return false;
     }
   };
@@ -227,11 +329,17 @@ export function useUser() {
   });
   
   const totalInvestmentsAmount = computed(() => {
+    if (liveInvestmentsAmount.value !== null) {
+      return liveInvestmentsAmount.value;
+    }
     if (!user.value?.investments) return 0;
-    // Simplistic sum of quantities; ideally this uses market values but for analytics it's a proxy.
-    // In InvestmentsView we fetch quotes, but here we can just use the base quantity for a rough estimate,
-    // or just return 0 if not calculated yet.
-    return user.value.investments.reduce((sum: number, i: any) => sum + parseFloat(i.quantity), 0);
+    return user.value.investments.reduce((sum: number, i: any) => {
+      let val = Number(i.quantity || 0) * Number(i.average_price || 1);
+      const userCurrency = user.value?.currency || 'MXN';
+      if (i.currency === 'USD' && userCurrency === 'MXN') val *= globalExchangeRate.value;
+      if (i.currency === 'MXN' && userCurrency === 'USD') val /= globalExchangeRate.value;
+      return sum + val;
+    }, 0);
   });
 
   const addFreeMoney = async (amount: number) => {
@@ -287,6 +395,8 @@ export function useUser() {
     updateProfile,
     uploadAvatar,
     addInvestment,
+    updateInvestment,
+    deleteInvestment,
     addFreeMoney,
     fetchNotifications,
     freeMoney,

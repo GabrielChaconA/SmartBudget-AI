@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, inject, ref, onMounted } from 'vue'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { useUser } from '@/composables/useUser'
 import VChart from 'vue-echarts'
@@ -8,15 +8,32 @@ import { PieChart } from 'echarts/charts'
 import { TooltipComponent, LegendComponent } from 'echarts/components'
 import { CanvasRenderer } from 'echarts/renderers'
 import { CHART_COLORS, getTranslucentStyle } from '@/lib/chartTheme'
+import { exchangeRateService } from '@/services/exchangeRate'
 
 echarts.use([TooltipComponent, LegendComponent, PieChart, CanvasRenderer])
 
 const { freeMoney, totalSubscriptionsAmount, totalInvestmentsAmount, user } = useUser()
+const displayCurrency = inject('displayCurrency', ref('MXN'))
+
+const exchangeRate = ref(20.0)
+onMounted(async () => {
+  exchangeRate.value = await exchangeRateService.getUsdMxnRate()
+})
+
+const toDisplayCurrency = (val: number, cur: string) => {
+  let baseVal = val
+  if (cur === 'USD' && user.value?.currency === 'MXN') baseVal *= exchangeRate.value
+  if (cur === 'MXN' && user.value?.currency === 'USD') baseVal /= exchangeRate.value
+  
+  if (displayCurrency.value === 'USD' && user.value?.currency === 'MXN') return baseVal / exchangeRate.value
+  if (displayCurrency.value === 'MXN' && user.value?.currency === 'USD') return baseVal * exchangeRate.value
+  return baseVal
+}
 
 const chartOption = computed(() => {
-  const free = freeMoney.value
-  const subs = totalSubscriptionsAmount.value
-  const inv = totalInvestmentsAmount.value
+  const free = toDisplayCurrency(freeMoney.value, user.value?.currency || 'MXN')
+  const subs = toDisplayCurrency(totalSubscriptionsAmount.value, user.value?.currency || 'MXN')
+  const inv = toDisplayCurrency(totalInvestmentsAmount.value, user.value?.currency || 'MXN')
 
   let rawData = [
     { value: free, name: 'Dinero Libre' },
@@ -42,7 +59,7 @@ const chartOption = computed(() => {
       formatter: (params: any) => {
         const val = new Intl.NumberFormat('en-US', {
           style: 'currency',
-          currency: user.value?.currency || 'MXN'
+          currency: displayCurrency.value
         }).format(params.value)
         return `<span style="color:${CHART_COLORS.textSecondary}">${params.name}</span><br/><span style="color:${CHART_COLORS.textPrimary};font-weight:700;font-size:14px;">${val}</span> <span style="font-size:12px;color:${CHART_COLORS.textTertiary}">(${params.percent}%)</span>`
       }

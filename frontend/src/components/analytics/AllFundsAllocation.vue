@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, inject, ref, onMounted } from 'vue'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { useUser } from '@/composables/useUser'
 import VChart from 'vue-echarts'
@@ -8,24 +8,41 @@ import { BarChart } from 'echarts/charts'
 import { TooltipComponent, GridComponent } from 'echarts/components'
 import { CanvasRenderer } from 'echarts/renderers'
 import { CHART_COLORS, commonTooltip, commonGrid, commonXAxis, commonYAxis, getTranslucentStyle } from '@/lib/chartTheme'
+import { exchangeRateService } from '@/services/exchangeRate'
 
 echarts.use([TooltipComponent, GridComponent, BarChart, CanvasRenderer])
 
 const { user } = useUser()
+const displayCurrency = inject('displayCurrency', ref('MXN'))
+
+const exchangeRate = ref(20.0)
+onMounted(async () => {
+  exchangeRate.value = await exchangeRateService.getUsdMxnRate()
+})
+
+const toDisplayCurrency = (val: number, cur: string) => {
+  let baseVal = val
+  if (cur === 'USD' && user.value?.currency === 'MXN') baseVal *= exchangeRate.value
+  if (cur === 'MXN' && user.value?.currency === 'USD') baseVal /= exchangeRate.value
+  
+  if (displayCurrency.value === 'USD' && user.value?.currency === 'MXN') return baseVal / exchangeRate.value
+  if (displayCurrency.value === 'MXN' && user.value?.currency === 'USD') return baseVal * exchangeRate.value
+  return baseVal
+}
 
 const totalFundsBalance = computed(() => {
-  return (user.value?.funds || [])
-    .reduce((acc, f) => acc + parseFloat(f.balance), 0)
+  const total = (user.value?.funds || []).reduce((acc, f) => acc + parseFloat(f.balance), 0)
+  return toDisplayCurrency(total, user.value?.currency || 'MXN')
 })
 
 const chartOption = computed(() => {
   const fundsData = (user.value?.funds || [])
     .map((f: any) => ({
       name: f.name || 'Caja',
-      value: parseFloat(f.balance)
+      value: toDisplayCurrency(parseFloat(f.balance), user.value?.currency || 'MXN')
     }))
     .filter((f: any) => f.value > 0)
-    .sort((a, b) => b.value - a.value) // Sort descending for standard vertical bars or ascending for horizontal
+    .sort((a, b) => b.value - a.value)
 
   const names = fundsData.map(f => f.name)
   const values = fundsData.map(f => f.value)
@@ -38,7 +55,7 @@ const chartOption = computed(() => {
       formatter: (params: any) => {
         const val = new Intl.NumberFormat('en-US', {
           style: 'currency',
-          currency: user.value?.currency || 'MXN'
+          currency: displayCurrency.value
         }).format(params[0].value)
         return `<span style="color:${CHART_COLORS.textSecondary}">${params[0].name}</span><br/><span style="color:${CHART_COLORS.textPrimary};font-weight:700;font-size:14px;">${val}</span>`
       }

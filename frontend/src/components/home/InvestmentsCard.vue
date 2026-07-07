@@ -6,24 +6,10 @@ import { useUser } from '@/composables/useUser'
 import { TrendingUp, Layers } from '@lucide/vue'
 import { RouterLink, useRouter } from 'vue-router'
 
-const { user } = useUser()
+const { user, totalInvestmentsAmount } = useUser()
 const router = useRouter()
 
-const getExchangeRate = () => 20.0
-
-const totalInvestments = computed(() => {
-  if (!user.value?.investments) return 0
-  
-  return user.value.investments.reduce((sum: number, h: any) => {
-    let baseValue = Number(h.quantity);
-    if (h.currency === 'USD' && user.value?.currency === 'MXN') {
-      baseValue *= getExchangeRate();
-    } else if (h.currency === 'MXN' && user.value?.currency === 'USD') {
-      baseValue /= getExchangeRate();
-    }
-    return sum + baseValue
-  }, 0)
-})
+const totalInvestments = computed(() => totalInvestmentsAmount.value)
 
 const numInvestments = computed(() => user.value?.investments?.length || 0)
 </script>
@@ -48,7 +34,7 @@ const numInvestments = computed(() => user.value?.investments?.length || 0)
           </span>
         </div>
         <div>
-          <p class="text-sm text-muted-foreground">Total Invested Capital</p>
+          <p class="text-sm text-muted-foreground">Current Value</p>
           <p class="mt-1 text-2xl font-semibold tracking-tight text-foreground">
             {{ formatCurrency(totalInvestments, user?.currency || 'MXN') }}
           </p>

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
-import { TrendingUp, TrendingDown, Layers, Building2, Bitcoin, Dices, ArrowUpRight, ArrowDownRight, RefreshCw, AlertCircle, Plus, Eye, EyeOff } from '@lucide/vue'
+import { TrendingUp, TrendingDown, Layers, Building2, Bitcoin, Dices, ArrowUpRight, ArrowDownRight, RefreshCw, AlertCircle, Plus, Eye, EyeOff, Edit2 } from '@lucide/vue'
 import DashboardLayout from '@/components/DashboardLayout.vue'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -8,11 +8,13 @@ import { Button } from '@/components/ui/button'
 import { portfolioPerformance, formatCurrency, investmentHoldings, type InvestmentCategory, type InvestmentHolding } from '@/lib/data'
 import { finnhubService } from '@/services/finnhub'
 import { coingeckoService } from '@/services/coingecko'
+import { exchangeRateService } from '@/services/exchangeRate'
 import { oddsApiService } from '@/services/oddsApi'
 import { useUser } from '@/composables/useUser'
 import { useRouter } from 'vue-router'
 import AssetLogo from '@/components/AssetLogo.vue'
 import AddInvestmentModal from '@/components/AddInvestmentModal.vue'
+import EditInvestmentModal from '@/components/EditInvestmentModal.vue'
 import { use } from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
 import { LineChart } from 'echarts/charts'
@@ -33,6 +35,26 @@ const { user, isBalancesVisible, toggleBalances, isItemVisible, toggleItemVisibi
 const router = useRouter()
 
 const isAddModalOpen = ref(false)
+const isEditModalOpen = ref(false)
+const selectedInvestmentToEdit = ref<any>(null)
+
+const displayCurrency = ref(user.value?.currency || 'MXN')
+
+watch(() => user.value?.currency, (newVal) => {
+  if (newVal && !displayCurrency.value) displayCurrency.value = newVal
+})
+
+const toggleCurrency = () => {
+  displayCurrency.value = displayCurrency.value === 'MXN' ? 'USD' : 'MXN'
+}
+
+const openEditModal = (holding: any) => {
+  const originalInvestment = user.value?.investments?.find((i: any) => i.id === holding.id)
+  if (originalInvestment) {
+    selectedInvestmentToEdit.value = originalInvestment
+    isEditModalOpen.value = true
+  }
+}
 
 const allCategories = [
   { id: 'all', label: 'All Investments', icon: 'all', value: 0, returnPercent: 0, dayPercent: 0 },
@@ -57,6 +79,14 @@ const holdings = computed(() => {
   }
   return activeHoldings.value[activeCat.value] ?? []
 })
+
+const getDisplayValue = (val: number) => {
+  if (!val) return 0;
+  const userCurrency = user.value?.currency || 'MXN';
+  if (userCurrency === 'MXN' && displayCurrency.value === 'USD') return val / exchangeRate.value;
+  if (userCurrency === 'USD' && displayCurrency.value === 'MXN') return val * exchangeRate.value;
+  return val;
+}
 
 const totalPortfolioValue = computed(() => {
   return holdings.value.reduce((sum, h) => sum + h.value, 0)
@@ -96,12 +126,23 @@ const fetchData = async () => {
     
     const cryptoIds = cryptos.map((c: any) => c.symbol.toLowerCase())
     
+    // Fetch each stock/ETF individually with its own try/catch so one failure doesn't kill everything
+    const fetchQuoteSafe = async (h: any) => {
+      try {
+        const q = await finnhubService.getQuote(h.symbol);
+        return { h, q };
+      } catch {
+        // Return fallback using average_price so the holding still shows up
+        return { h, q: { c: h.average_price || 0, dp: 0, d: 0, h: 0, l: 0, o: 0, pc: 0 } };
+      }
+    };
+
     const [etfRes, stockRes, cryptoRes, oddsRes, usdRes] = await Promise.allSettled([
-      Promise.all(etfs.map((h: any) => finnhubService.getQuote(h.symbol).then(q => ({ h, q })))),
-      Promise.all(stocks.map((h: any) => finnhubService.getQuote(h.symbol).then(q => ({ h, q })))),
+      Promise.all(etfs.map(fetchQuoteSafe)),
+      Promise.all(stocks.map(fetchQuoteSafe)),
       cryptoIds.length > 0 ? coingeckoService.getMarkets(cryptoIds) : Promise.resolve([]),
       oddsApiService.getUpcomingOdds(),
-      coingeckoService.getUsdMxnRate()
+      exchangeRateService.getUsdMxnRate()
     ])
     
     if (usdRes.status === 'fulfilled') {
@@ -110,35 +151,59 @@ const fetchData = async () => {
     
     const newHoldings: Record<string, InvestmentHolding[]> = { etfs: [], stocks: [], crypto: [], bets: [] }
     
-    const processHolding = (h: any, dp: number) => {
-      let baseValue = Number(h.quantity);
-      if (h.currency === 'USD' && user.value?.currency === 'MXN') {
-        baseValue *= exchangeRate.value;
-      } else if (h.currency === 'MXN' && user.value?.currency === 'USD') {
-        baseValue /= exchangeRate.value;
+    const processHolding = (h: any, dp: number, currentPriceUsd?: number) => {
+      // API prices (Finnhub and CoinGecko) are in USD.
+      // If we don't have a current price (e.g., Bets), fallback to (average_price * (1 + dp/100))
+      let currentPriceNative = h.average_price || 1; 
+      if (currentPriceUsd !== undefined) {
+        currentPriceNative = currentPriceUsd * (h.currency === 'MXN' ? exchangeRate.value : 1);
+      } else {
+        currentPriceNative = (h.average_price || 1) * (1 + (dp / 100));
       }
+
+      // Calculate values in native currency of the investment
+      const originalValueNative = h.quantity * (h.average_price || 1);
+      const currentValueNative = h.quantity * currentPriceNative;
+
+      // Calculate historical return percent
+      const historicalReturn = (h.average_price && h.average_price > 0)
+        ? ((currentPriceNative - h.average_price) / h.average_price) * 100 
+        : 0;
+
+      // Convert current value to User's Base Currency for the global totals
+      let currentValueBase = currentValueNative;
+      const userCurrency = user.value?.currency || 'MXN';
+      if (h.currency === 'USD' && userCurrency === 'MXN') {
+        currentValueBase *= exchangeRate.value;
+      } else if (h.currency === 'MXN' && userCurrency === 'USD') {
+        currentValueBase /= exchangeRate.value;
+      }
+
       return {
         id: h.id,
         name: h.symbol,
         ticker: h.symbol,
-        value: baseValue * (1 + (dp / 100)),
-        returnPercent: dp,
-        dayPercent: dp
+        value: currentValueBase,
+        originalValue: currentValueNative,
+        originalCurrency: h.currency || 'MXN',
+        returnPercent: historicalReturn,
+        dayPercent: dp,
+        totalInvestedNative: originalValueNative
       }
     }
 
     if (etfRes.status === 'fulfilled') {
-      newHoldings.etfs = etfRes.value.map((item: any) => processHolding(item.h, item.q.dp))
+      newHoldings.etfs = etfRes.value.map((item: any) => processHolding(item.h, item.q.dp, item.q.c))
     }
     
     if (stockRes.status === 'fulfilled') {
-      newHoldings.stocks = stockRes.value.map((item: any) => processHolding(item.h, item.q.dp))
+      newHoldings.stocks = stockRes.value.map((item: any) => processHolding(item.h, item.q.dp, item.q.c))
     }
     
     if (cryptoRes.status === 'fulfilled' && cryptoRes.value.length > 0) {
-      newHoldings.crypto = cryptos.map((c: any) => {
-        const market = cryptoRes.value.find((m: any) => m.symbol.toLowerCase() === c.symbol.toLowerCase())
-        return processHolding(c, market ? market.price_change_percentage_24h : 0)
+      newHoldings.crypto = cryptos.map((h: any) => {
+        const market = cryptoRes.value.find((m: any) => m.symbol.toLowerCase() === h.symbol.toLowerCase())
+        return processHolding(h, market?.price_change_percentage_24h || 0, market?.current_price)
       })
     } else {
       newHoldings.crypto = cryptos.map((c: any) => processHolding(c, 0))
@@ -192,15 +257,15 @@ watch(() => user.value?.investments, () => {
 
 import { CHART_COLORS, commonTooltip, commonGrid, commonXAxis, commonYAxis } from '@/lib/chartTheme'
 
-const chartOption = ref({
+const chartOption = computed(() => ({
   backgroundColor: 'transparent',
   tooltip: {
     ...commonTooltip,
     trigger: 'axis',
     formatter: (params: any) => {
-      const v = params[0].value
+      const v = getDisplayValue(params[0].value)
       const date = params[0].name
-      return `<span style="color:${CHART_COLORS.textSecondary}">${date}</span><br/><span style="color:${CHART_COLORS.textPrimary};font-weight:700;font-size:14px;">$${new Intl.NumberFormat('en-US', { notation: 'compact' }).format(v)}</span>`
+      return `<span style="color:${CHART_COLORS.textSecondary}">${date}</span><br/><span style="color:${CHART_COLORS.textPrimary};font-weight:700;font-size:14px;">$${new Intl.NumberFormat('en-US', { notation: 'compact' }).format(v)} ${displayCurrency.value}</span>`
     }
   },
   grid: { 
@@ -221,7 +286,7 @@ const chartOption = ref({
     type: 'value',
     axisLabel: {
       ...commonYAxis.axisLabel,
-      formatter: (v: number) => `$${new Intl.NumberFormat('en-US', { notation: 'compact' }).format(v)}`
+      formatter: (v: number) => `$${new Intl.NumberFormat('en-US', { notation: 'compact' }).format(getDisplayValue(v))}`
     }
   },
   series: [
@@ -247,7 +312,7 @@ const chartOption = ref({
       animationEasing: 'cubicOut'
     }
   ]
-})
+}))
 </script>
 
 <template>
@@ -267,6 +332,13 @@ const chartOption = ref({
             <span v-if="lastUpdate" class="text-xs text-muted-foreground">
               Última actualización: {{ lastUpdate.toLocaleTimeString() }}
             </span>
+            <button 
+              @click="toggleCurrency"
+              class="flex items-center justify-center gap-1 rounded-full bg-primary/10 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-primary transition-colors hover:bg-primary/20"
+            >
+              <RefreshCw class="size-3" />
+              {{ displayCurrency }}
+            </button>
             <Button variant="outline" size="sm" @click="fetchData" :disabled="isLoading">
               <RefreshCw class="size-4 mr-2" :class="{ 'animate-spin': isLoading }" />
               Actualizar
@@ -285,7 +357,7 @@ const chartOption = ref({
             <div>
               <CardDescription>{{ activeCat === 'all' ? 'Total portfolio value' : activeCategories.find(c => c.id === activeCat)?.label + ' Value' }}</CardDescription>
               <CardTitle class="text-3xl flex items-center gap-2">
-                <span v-if="isItemVisible('invest_total')">{{ formatCurrency(activeCategories.find(c => c.id === activeCat)?.value || 0, user?.currency || 'MXN') }}</span>
+                <span v-if="isItemVisible('invest_total')">{{ formatCurrency(getDisplayValue(activeCategories.find(c => c.id === activeCat)?.value || 0), displayCurrency) }}</span>
                 <span v-else>••••••</span>
                 <Button variant="ghost" size="icon" @click.stop="toggleItemVisibility('invest_total')" class="h-8 w-8 text-muted-foreground hover:text-foreground">
                   <Eye v-if="isItemVisible('invest_total')" class="size-4" />
@@ -345,7 +417,7 @@ const chartOption = ref({
                   {{ cat.label }}
                 </span>
                 <span class="font-semibold tabular-nums text-foreground">
-                  <span v-if="isItemVisible('invest_summary')">{{ formatCurrency(cat.value, user?.currency || 'MXN') }}</span>
+                  <span v-if="isItemVisible('invest_summary')">{{ formatCurrency(getDisplayValue(cat.value), displayCurrency) }}</span>
                   <span v-else>••••••</span>
                 </span>
               </div>
@@ -355,16 +427,22 @@ const chartOption = ref({
               </div>
             </template>
             <template v-else>
-              <div v-for="h in holdings" :key="h.id" class="flex items-center justify-between">
+              <div 
+                v-for="h in holdings" 
+                :key="h.id" 
+                class="flex items-center justify-between group cursor-pointer hover:bg-accent/50 p-1 -mx-1 rounded-md transition-colors"
+                @click.stop="openEditModal(h)"
+              >
                 <span class="text-sm text-muted-foreground flex items-center gap-2">
                   <div class="flex size-5 items-center justify-center rounded overflow-hidden bg-accent">
                     <AssetLogo :symbol="h.ticker" :fallback-icon="h.returnPercent >= 0 ? TrendingUp : TrendingDown" />
                   </div>
                   {{ h.name }}
                 </span>
-                <span class="font-semibold tabular-nums text-foreground">
-                  <span v-if="isItemVisible('invest_summary')">{{ formatCurrency(h.value, user?.currency || 'MXN') }}</span>
+                <span class="font-semibold tabular-nums text-foreground flex items-center gap-2">
+                  <span v-if="isItemVisible('invest_summary')">{{ formatCurrency(h.originalValue, h.originalCurrency) }}</span>
                   <span v-else>••••••</span>
+                  <Edit2 class="size-3 opacity-0 group-hover:opacity-100 text-muted-foreground transition-opacity" />
                 </span>
               </div>
               
@@ -379,7 +457,7 @@ const chartOption = ref({
               <span class="text-sm font-medium text-foreground">Total</span>
               <span class="font-bold tabular-nums text-primary">
                 <span v-if="isItemVisible('invest_summary')">
-                  {{ formatCurrency(activeCat === 'all' ? totalPortfolioValue : (activeCategories.find(c => c.id === activeCat)?.value || 0), user?.currency || 'MXN') }}
+                  {{ formatCurrency(getDisplayValue(activeCat === 'all' ? totalPortfolioValue : (activeCategories.find(c => c.id === activeCat)?.value || 0)), displayCurrency) }}
                 </span>
                 <span v-else>••••••</span>
               </span>
@@ -423,7 +501,7 @@ const chartOption = ref({
             <p class="mt-3 text-sm text-muted-foreground">{{ cat.label }}</p>
             <p class="text-lg font-semibold text-foreground flex items-center justify-between">
               <span>
-                <span v-if="isItemVisible('invest_cat_' + cat.id)">{{ formatCurrency(cat.value, user?.currency || 'MXN') }}</span>
+                <span v-if="isItemVisible('invest_cat_' + cat.id)">{{ formatCurrency(getDisplayValue(cat.value), displayCurrency) }}</span>
                 <span v-else>••••••</span>
               </span>
               <button @click.stop="toggleItemVisibility('invest_cat_' + cat.id)" class="text-muted-foreground hover:text-foreground">
@@ -464,7 +542,7 @@ const chartOption = ref({
               </div>
               <div class="text-right">
                 <p class="font-semibold text-foreground tabular-nums">
-                  <span v-if="isItemVisible('invest_cat_' + activeCat)">{{ formatCurrency(h.value, user?.currency || 'MXN') }}</span>
+                  <span v-if="isItemVisible('invest_cat_' + activeCat)">{{ formatCurrency(h.originalValue, h.originalCurrency) }}</span>
                   <span v-else>••••••</span>
                 </p>
                 <div class="flex items-center justify-end gap-2">
@@ -476,7 +554,7 @@ const chartOption = ref({
                     <ArrowDownRight v-else class="size-3.5" />
                     {{ h.returnPercent > 0 ? '+' : '' }}{{ h.returnPercent.toFixed(1) }}%
                   </span>
-                  <span class="text-xs text-muted-foreground">today</span>
+                  <span class="text-xs text-muted-foreground">total</span>
                 </div>
               </div>
             </div>
@@ -494,6 +572,7 @@ const chartOption = ref({
       </section>
     </div>
     
-    <AddInvestmentModal v-model:open="isAddModalOpen" :initial-category="activeCat !== 'all' ? activeCat : undefined" />
+    <AddInvestmentModal v-model:open="isAddModalOpen" :initial-category="activeCat !== 'all' ? activeCat : undefined" :default-currency="displayCurrency" />
+    <EditInvestmentModal v-model:open="isEditModalOpen" :investment="selectedInvestmentToEdit" :default-currency="displayCurrency" />
   </DashboardLayout>
 </template>

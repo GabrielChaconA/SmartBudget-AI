@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge'
 import { useUser } from '@/composables/useUser'
 import { computed, ref, watch, onMounted } from 'vue'
 import { formatCurrency } from '@/lib/data'
-import { coingeckoService } from '@/services/coingecko'
+import { exchangeRateService } from '@/services/exchangeRate'
 import { use } from 'echarts/core'
 import * as echarts from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
@@ -15,7 +15,7 @@ import VChart from 'vue-echarts'
 
 use([CanvasRenderer, LineChart, GridComponent, TooltipComponent])
 
-const { user, isBalancesVisible, isItemVisible, toggleItemVisibility } = useUser()
+const { user, isBalancesVisible, isItemVisible, toggleItemVisibility, totalInvestmentsAmount } = useUser()
 
 const displayCurrency = ref(user.value?.currency || 'MXN')
 
@@ -29,7 +29,7 @@ const toggleCurrency = () => {
 
 const exchangeRate = ref(20.0)
 onMounted(async () => {
-  exchangeRate.value = await coingeckoService.getUsdMxnRate()
+  exchangeRate.value = await exchangeRateService.getUsdMxnRate()
 })
 const getExchangeRate = () => exchangeRate.value
 
@@ -40,22 +40,17 @@ const baseBalance = computed(() => {
   }
   // Fund balances are subsets of Account balances (e.g. Cartera), so adding them here would double-count.
   // Also add investments!
-  if (user.value?.investments) {
-    sum += user.value.investments.reduce((acc: number, i: any) => {
-      let val = Number(i.quantity || 0);
-      // Convert to user base currency first
-      if (i.currency === 'USD' && user.value?.currency === 'MXN') val *= getExchangeRate();
-      if (i.currency === 'MXN' && user.value?.currency === 'USD') val /= getExchangeRate();
-      return acc + val;
-    }, 0)
-  }
+  // Add investments using the shared computed property
+  sum += totalInvestmentsAmount.value
+
   return sum
 })
 
 const totalBalance = computed(() => {
   let val = baseBalance.value;
-  if (user.value?.currency === 'MXN' && displayCurrency.value === 'USD') val /= getExchangeRate();
-  if (user.value?.currency === 'USD' && displayCurrency.value === 'MXN') val *= getExchangeRate();
+  const userCurrency = user.value?.currency || 'MXN';
+  if (userCurrency === 'MXN' && displayCurrency.value === 'USD') val /= getExchangeRate();
+  if (userCurrency === 'USD' && displayCurrency.value === 'MXN') val *= getExchangeRate();
   return val || 0;
 })
 

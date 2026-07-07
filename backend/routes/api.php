@@ -46,7 +46,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::post('/accounts/add-money', function (Request $request) {
         $validated = $request->validate([
-            'amount' => 'required|numeric|min:0.01'
+            'amount' => 'required|numeric|not_in:0'
         ]);
 
         $userId = $request->user()->id;
@@ -60,7 +60,7 @@ Route::middleware('auth:sanctum')->group(function () {
         if ($account) {
             \Illuminate\Support\Facades\DB::table('accounts')
                 ->where('id', $account->id)
-                ->increment('balance', $amount);
+                ->update(['balance' => \Illuminate\Support\Facades\DB::raw('balance + ' . $amount)]);
         } else {
             \Illuminate\Support\Facades\DB::table('accounts')->insert([
                 'user_id' => $userId,
@@ -72,7 +72,32 @@ Route::middleware('auth:sanctum')->group(function () {
             ]);
         }
 
-        return response()->json(['success' => true]);
+        return response()->json(['message' => 'Money added successfully']);
+    });
+
+    // Resets Cartera balance to exactly match sum of funds (so free money = 0)
+    Route::post('/reset-free-money', function (Request $request) {
+        $userId = $request->user()->id;
+        $fundsTotal = \Illuminate\Support\Facades\DB::table('funds')->where('user_id', $userId)->sum('balance');
+        $account = \Illuminate\Support\Facades\DB::table('accounts')
+            ->where('user_id', $userId)
+            ->where('name', 'Cartera')
+            ->first();
+        if ($account) {
+            \Illuminate\Support\Facades\DB::table('accounts')
+                ->where('id', $account->id)
+                ->update(['balance' => $fundsTotal]);
+        } else {
+            \Illuminate\Support\Facades\DB::table('accounts')->insert([
+                'user_id' => $userId,
+                'name' => 'Cartera',
+                'type' => 'cash',
+                'balance' => $fundsTotal,
+                'created_at' => now(),
+                'updated_at' => now()
+            ]);
+        }
+        return response()->json(['message' => 'Free money reset', 'balance' => $fundsTotal]);
     });
 
     Route::get('/notifications', function (Request $request) {
@@ -248,5 +273,7 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     Route::post('/investments', [\App\Http\Controllers\InvestmentController::class, 'store']);
+    Route::put('/investments/{id}', [\App\Http\Controllers\InvestmentController::class, 'update']);
+    Route::delete('/investments/{id}', [\App\Http\Controllers\InvestmentController::class, 'destroy']);
 });
 
