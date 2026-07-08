@@ -39,7 +39,7 @@ export const oddsApiService = {
       // Return top limit matches
       return response.data.slice(0, limit)
     } catch (error) {
-      console.error(`Error fetching Odds API:`, error)
+      // Silently fail if API key is invalid/expired
       return []
     }
   }

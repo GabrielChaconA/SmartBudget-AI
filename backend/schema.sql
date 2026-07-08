@@ -152,8 +152,8 @@ CREATE TABLE investments (
     user_id INT REFERENCES users(id) ON DELETE CASCADE,
     account_id INT REFERENCES accounts(id) ON DELETE SET NULL,
     symbol VARCHAR(50) NOT NULL,
-    quantity DECIMAL(15,6) NOT NULL,
-    average_price DECIMAL(15,2) NOT NULL,
+    quantity DECIMAL(24,12) NOT NULL,
+    average_price DECIMAL(24,12) NOT NULL,
     currency VARCHAR(10) DEFAULT 'MXN',
     type VARCHAR(50) NOT NULL, -- etf, stock, crypto
     created_at TIMESTAMP NULL,

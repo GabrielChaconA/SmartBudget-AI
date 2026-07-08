@@ -18,7 +18,7 @@ Route::middleware('auth:sanctum')->group(function () {
         $goals = \Illuminate\Support\Facades\DB::table('goals')->where('user_id', $user->id)->get();
         $subscriptions = \Illuminate\Support\Facades\DB::table('subscriptions')->where('user_id', $user->id)->get();
         $investments = \Illuminate\Support\Facades\DB::table('investments')->where('user_id', $user->id)->get();
-        
+
         $funds = \Illuminate\Support\Facades\DB::table('funds')->where('user_id', $user->id)->get();
         $fundIds = $funds->pluck('id')->toArray();
         $allocations = \Illuminate\Support\Facades\DB::table('fund_allocations')
@@ -26,11 +26,11 @@ Route::middleware('auth:sanctum')->group(function () {
             ->select('fund_allocations.*', 'categories.name as category_name', 'categories.icon as category_icon')
             ->whereIn('fund_allocations.fund_id', $fundIds)
             ->get();
-            
+
         foreach ($funds as $fund) {
             $fund->allocations = $allocations->where('fund_id', $fund->id)->values()->toArray();
         }
-        
+
         $userData = $user->toArray();
         if ($settings) {
             $userData['currency'] = $settings->currency;
@@ -130,7 +130,7 @@ Route::middleware('auth:sanctum')->group(function () {
             ->where('id', $id)
             ->where('user_id', $request->user()->id)
             ->first();
-            
+
         if (!$fund) {
             return response()->json(['success' => false, 'message' => 'Fund not found'], 404);
         }
@@ -139,13 +139,13 @@ Route::middleware('auth:sanctum')->group(function () {
             ->where('id', $id)
             ->where('user_id', $request->user()->id)
             ->update($validated);
-            
+
         if (isset($validated['balance']) && $validated['balance'] != $fund->balance) {
             $diff = $validated['balance'] - $fund->balance;
             $action = $diff > 0 ? 'agregado a' : 'retirado de';
             $absAmount = abs($diff);
             $title = $diff > 0 ? 'Dinero Agregado' : 'Dinero Retirado';
-            
+
             \Illuminate\Support\Facades\DB::table('notifications')->insert([
                 'user_id' => $request->user()->id,
                 'type' => 'fund_update',
@@ -183,7 +183,7 @@ Route::middleware('auth:sanctum')->group(function () {
                     ->update(['icon' => $validated['icon']]);
             }
         }
-        
+
         $existing = \Illuminate\Support\Facades\DB::table('fund_allocations')
             ->where('fund_id', $id)
             ->where('category_id', $categoryId)
@@ -200,11 +200,11 @@ Route::middleware('auth:sanctum')->group(function () {
                 'amount' => $validated['amount']
             ]);
         }
-        
+
         $fund = \Illuminate\Support\Facades\DB::table('funds')->where('id', $id)->first();
         $absAmount = abs($validated['amount']);
         $title = 'Asignación de Caja';
-        
+
         \Illuminate\Support\Facades\DB::table('notifications')->insert([
             'user_id' => $request->user()->id,
             'type' => 'fund_allocation',
@@ -219,24 +219,24 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/user/income-stats', function (Request $request) {
         $userId = $request->user()->id;
-        
+
         $transactions = \Illuminate\Support\Facades\DB::table('transactions')
             ->where('user_id', $userId)
             ->where('type', 'income')
             ->select('amount', 'date')
             ->orderBy('date', 'asc')
             ->get();
-            
+
         return response()->json($transactions);
     });
     Route::get('/subscription-catalog', function (Request $request) {
         $query = $request->query('query');
         $catalogQuery = \Illuminate\Support\Facades\DB::table('subscription_catalog');
-        
+
         if ($query) {
             $catalogQuery->where('name', 'ilike', '%' . $query . '%');
         }
-        
+
         return response()->json($catalogQuery->take(20)->get());
     });
 
@@ -248,17 +248,17 @@ Route::middleware('auth:sanctum')->group(function () {
             'next_billing_date' => 'required|date',
             'category_id' => 'nullable|integer'
         ]);
-        
+
         $validated['user_id'] = $request->user()->id;
         $id = \Illuminate\Support\Facades\DB::table('subscriptions')->insertGetId($validated);
-        
+
         $validated['id'] = $id;
         return response()->json($validated);
     });
 
     Route::post('/test-subscription-email', function (Request $request) {
         $user = $request->user();
-        
+
         // Find one subscription that is active (e.g. Netflix that we just inserted)
         $subscription = \Illuminate\Support\Facades\DB::table('subscriptions')
             ->where('user_id', $user->id)
@@ -268,12 +268,17 @@ Route::middleware('auth:sanctum')->group(function () {
             \Illuminate\Support\Facades\Mail::to($user->email)->send(new \App\Mail\SubscriptionAlertMail($user, $subscription));
             return response()->json(['success' => true, 'message' => 'Test email sent successfully to ' . $user->email]);
         }
-        
+
         return response()->json(['success' => false, 'message' => 'No subscriptions found to test with.'], 404);
     });
 
+    Route::get('/investments', [\App\Http\Controllers\InvestmentController::class, 'index']);
     Route::post('/investments', [\App\Http\Controllers\InvestmentController::class, 'store']);
     Route::put('/investments/{id}', [\App\Http\Controllers\InvestmentController::class, 'update']);
     Route::delete('/investments/{id}', [\App\Http\Controllers\InvestmentController::class, 'destroy']);
-});
+    
+    Route::post('/investment-alerts', [\App\Http\Controllers\InvestmentAlertController::class, 'store']);
 
+    // Exchange Rate
+    Route::get('/exchange-rate', [\App\Http\Controllers\ExchangeRateController::class, 'getRate']);
+});

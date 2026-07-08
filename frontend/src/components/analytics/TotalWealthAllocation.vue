@@ -2,6 +2,7 @@
 import { computed, inject, ref, onMounted } from 'vue'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { useUser } from '@/composables/useUser'
+import { useInvestments } from '@/composables/useInvestments'
 import VChart from 'vue-echarts'
 import * as echarts from 'echarts/core'
 import { PieChart } from 'echarts/charts'
@@ -12,7 +13,8 @@ import { exchangeRateService } from '@/services/exchangeRate'
 
 echarts.use([TooltipComponent, LegendComponent, PieChart, CanvasRenderer])
 
-const { freeMoney, totalSubscriptionsAmount, totalInvestmentsAmount, user } = useUser()
+const { freeMoney, totalSubscriptionsAmount, user } = useUser()
+const { totalPortfolioValue } = useInvestments()
 const displayCurrency = inject('displayCurrency', ref('MXN'))
 
 const exchangeRate = ref(20.0)
@@ -33,7 +35,8 @@ const toDisplayCurrency = (val: number, cur: string) => {
 const chartOption = computed(() => {
   const free = toDisplayCurrency(freeMoney.value, user.value?.currency || 'MXN')
   const subs = toDisplayCurrency(totalSubscriptionsAmount.value, user.value?.currency || 'MXN')
-  const inv = toDisplayCurrency(totalInvestmentsAmount.value, user.value?.currency || 'MXN')
+  // totalPortfolioValue is already in the user's base currency, so we just convert it to displayCurrency
+  const inv = toDisplayCurrency(totalPortfolioValue.value, user.value?.currency || 'MXN')
 
   let rawData = [
     { value: free, name: 'Dinero Libre' },
@@ -96,6 +99,16 @@ const chartOption = computed(() => {
     ]
   }
 })
+const totalValueFormatted = computed(() => {
+  const free = toDisplayCurrency(freeMoney.value, user.value?.currency || 'MXN')
+  const subs = toDisplayCurrency(totalSubscriptionsAmount.value, user.value?.currency || 'MXN')
+  const inv = toDisplayCurrency(totalPortfolioValue.value, user.value?.currency || 'MXN')
+  
+  return new Intl.NumberFormat('en-US', { 
+    style: 'currency', 
+    currency: displayCurrency.value 
+  }).format(free + subs + inv)
+})
 </script>
 
 <template>
@@ -103,12 +116,12 @@ const chartOption = computed(() => {
     <CardHeader class="pb-2">
       <CardTitle class="text-base font-normal text-[#a1a1aa]">Distribución Global</CardTitle>
       <div class="mt-1 flex items-baseline gap-2">
-         <span class="text-3xl font-bold text-white tracking-tight">${{ new Intl.NumberFormat('en-US').format(freeMoney + totalSubscriptionsAmount + totalInvestmentsAmount) }}</span>
+         <span class="text-3xl font-bold text-white tracking-tight">{{ totalValueFormatted }}</span>
       </div>
       <CardDescription class="text-[#6b7280]">Dinero libre vs Suscripciones vs Inversiones</CardDescription>
     </CardHeader>
     <CardContent class="h-[300px] w-full p-0 mt-4 flex items-center justify-center">
-      <div v-if="freeMoney === 0 && totalSubscriptionsAmount === 0 && totalInvestmentsAmount === 0" class="text-[#6b7280] text-sm">
+      <div v-if="freeMoney === 0 && totalSubscriptionsAmount === 0 && totalPortfolioValue === 0" class="text-[#6b7280] text-sm">
         No hay datos suficientes
       </div>
       <VChart v-else :option="chartOption" autoresize class="w-full h-full" />

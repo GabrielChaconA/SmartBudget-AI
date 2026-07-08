@@ -1,20 +1,18 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
-import { TrendingUp, TrendingDown, Layers, Building2, Bitcoin, Dices, ArrowUpRight, ArrowDownRight, RefreshCw, AlertCircle, Plus, Eye, EyeOff, Edit2 } from '@lucide/vue'
+import { TrendingUp, TrendingDown, Layers, Building2, Bitcoin, Dices, ArrowUpRight, ArrowDownRight, RefreshCw, AlertCircle, Plus, Eye, EyeOff, Edit2, Bell } from '@lucide/vue'
 import DashboardLayout from '@/components/DashboardLayout.vue'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { portfolioPerformance, formatCurrency, investmentHoldings, type InvestmentCategory, type InvestmentHolding } from '@/lib/data'
-import { finnhubService } from '@/services/finnhub'
-import { coingeckoService } from '@/services/coingecko'
-import { exchangeRateService } from '@/services/exchangeRate'
-import { oddsApiService } from '@/services/oddsApi'
+import { formatCurrency, investmentHoldings, type InvestmentCategory, type InvestmentHolding } from '@/lib/data'
 import { useUser } from '@/composables/useUser'
+import { useInvestments } from '@/composables/useInvestments'
 import { useRouter } from 'vue-router'
 import AssetLogo from '@/components/AssetLogo.vue'
 import AddInvestmentModal from '@/components/AddInvestmentModal.vue'
 import EditInvestmentModal from '@/components/EditInvestmentModal.vue'
+import InvestmentAlertModal from '@/components/InvestmentAlertModal.vue'
 import { use } from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
 import { LineChart } from 'echarts/charts'
@@ -32,11 +30,14 @@ const categoryIcons: Record<string, any> = {
 }
 
 const { user, isBalancesVisible, toggleBalances, isItemVisible, toggleItemVisibility } = useUser()
+const { activeCategories, activeHoldings, totalPortfolioValue, isLoading, isError, lastUpdate, exchangeRate, fetchData: _fetchData } = useInvestments()
 const router = useRouter()
 
 const isAddModalOpen = ref(false)
 const isEditModalOpen = ref(false)
+const isAlertModalOpen = ref(false)
 const selectedInvestmentToEdit = ref<any>(null)
+const selectedHoldingForAlert = ref<any>(null)
 
 const displayCurrency = ref(user.value?.currency || 'MXN')
 
@@ -56,16 +57,10 @@ const openEditModal = (holding: any) => {
   }
 }
 
-const allCategories = [
-  { id: 'all', label: 'All Investments', icon: 'all', value: 0, returnPercent: 0, dayPercent: 0 },
-  { id: 'etfs', label: 'ETFs', icon: 'etfs', value: 0, returnPercent: 0, dayPercent: 0 },
-  { id: 'stocks', label: 'Empresas', icon: 'stocks', value: 0, returnPercent: 0, dayPercent: 0 },
-  { id: 'crypto', label: 'Criptos', icon: 'crypto', value: 0, returnPercent: 0, dayPercent: 0 },
-  { id: 'bets', label: 'Apuestas', icon: 'bets', value: 0, returnPercent: 0, dayPercent: 0 },
-]
-
-const activeCategories = ref<InvestmentCategory[]>(JSON.parse(JSON.stringify(allCategories)))
-const activeHoldings = ref<Record<string, InvestmentHolding[]>>({ etfs: [], stocks: [], crypto: [], bets: [] })
+const openAlertModal = (holding: any) => {
+  selectedHoldingForAlert.value = holding
+  isAlertModalOpen.value = true
+}
 
 const activeCat = ref('all')
 const holdings = computed(() => {
@@ -88,174 +83,43 @@ const getDisplayValue = (val: number) => {
   return val;
 }
 
-const totalPortfolioValue = computed(() => {
-  return holdings.value.reduce((sum, h) => sum + h.value, 0)
-})
-
-const topHoldings = computed(() => {
-  const allHoldings = activeCat.value === 'all' 
-    ? [
-        ...investmentHoldings.etfs,
-        ...investmentHoldings.stocks,
-        ...investmentHoldings.crypto,
-        ...investmentHoldings.bets
-      ]
-    : investmentHoldings[activeCat.value as keyof typeof investmentHoldings] || [];
-    
-  return [...allHoldings].sort((a, b) => b.returnPercent - a.returnPercent).slice(0, 5)
-})
-
-const isLoading = ref(false)
-const isError = ref(false)
-const lastUpdate = ref<Date | null>(null)
-
-const exchangeRate = ref(20.0);
-
-const fetchData = async () => {
-  if (!user.value) return;
-  isLoading.value = true
-  isError.value = false
-  
-  try {
-    const userInvestments = user.value.investments || [];
-    
-    const etfs = userInvestments.filter((i: any) => i.type === 'etfs');
-    const stocks = userInvestments.filter((i: any) => i.type === 'stocks');
-    const cryptos = userInvestments.filter((i: any) => i.type === 'crypto');
-    const bets = userInvestments.filter((i: any) => i.type === 'bets');
-    
-    const cryptoIds = cryptos.map((c: any) => c.symbol.toLowerCase())
-    
-    // Fetch each stock/ETF individually with its own try/catch so one failure doesn't kill everything
-    const fetchQuoteSafe = async (h: any) => {
-      try {
-        const q = await finnhubService.getQuote(h.symbol);
-        return { h, q };
-      } catch {
-        // Return fallback using average_price so the holding still shows up
-        return { h, q: { c: h.average_price || 0, dp: 0, d: 0, h: 0, l: 0, o: 0, pc: 0 } };
-      }
-    };
-
-    const [etfRes, stockRes, cryptoRes, oddsRes, usdRes] = await Promise.allSettled([
-      Promise.all(etfs.map(fetchQuoteSafe)),
-      Promise.all(stocks.map(fetchQuoteSafe)),
-      cryptoIds.length > 0 ? coingeckoService.getMarkets(cryptoIds) : Promise.resolve([]),
-      oddsApiService.getUpcomingOdds(),
-      exchangeRateService.getUsdMxnRate()
-    ])
-    
-    if (usdRes.status === 'fulfilled') {
-      exchangeRate.value = usdRes.value;
-    }
-    
-    const newHoldings: Record<string, InvestmentHolding[]> = { etfs: [], stocks: [], crypto: [], bets: [] }
-    
-    const processHolding = (h: any, dp: number, currentPriceUsd?: number) => {
-      // API prices (Finnhub and CoinGecko) are in USD.
-      // If we don't have a current price (e.g., Bets), fallback to (average_price * (1 + dp/100))
-      let currentPriceNative = h.average_price || 1; 
-      if (currentPriceUsd !== undefined) {
-        currentPriceNative = currentPriceUsd * (h.currency === 'MXN' ? exchangeRate.value : 1);
-      } else {
-        currentPriceNative = (h.average_price || 1) * (1 + (dp / 100));
-      }
-
-      // Calculate values in native currency of the investment
-      const originalValueNative = h.quantity * (h.average_price || 1);
-      const currentValueNative = h.quantity * currentPriceNative;
-
-      // Calculate historical return percent
-      const historicalReturn = (h.average_price && h.average_price > 0)
-        ? ((currentPriceNative - h.average_price) / h.average_price) * 100 
-        : 0;
-
-      // Convert current value to User's Base Currency for the global totals
-      let currentValueBase = currentValueNative;
-      const userCurrency = user.value?.currency || 'MXN';
-      if (h.currency === 'USD' && userCurrency === 'MXN') {
-        currentValueBase *= exchangeRate.value;
-      } else if (h.currency === 'MXN' && userCurrency === 'USD') {
-        currentValueBase /= exchangeRate.value;
-      }
-
-      return {
-        id: h.id,
-        name: h.symbol,
-        ticker: h.symbol,
-        value: currentValueBase,
-        originalValue: currentValueNative,
-        originalCurrency: h.currency || 'MXN',
-        returnPercent: historicalReturn,
-        dayPercent: dp,
-        totalInvestedNative: originalValueNative
-      }
-    }
-
-    if (etfRes.status === 'fulfilled') {
-      newHoldings.etfs = etfRes.value.map((item: any) => processHolding(item.h, item.q.dp, item.q.c))
-    }
-    
-    if (stockRes.status === 'fulfilled') {
-      newHoldings.stocks = stockRes.value.map((item: any) => processHolding(item.h, item.q.dp, item.q.c))
-    }
-    
-    if (cryptoRes.status === 'fulfilled' && cryptoRes.value.length > 0) {
-      newHoldings.crypto = cryptos.map((h: any) => {
-        const market = cryptoRes.value.find((m: any) => m.symbol.toLowerCase() === h.symbol.toLowerCase())
-        return processHolding(h, market?.price_change_percentage_24h || 0, market?.current_price)
-      })
-    } else {
-      newHoldings.crypto = cryptos.map((c: any) => processHolding(c, 0))
-    }
-    
-    if (oddsRes.status === 'fulfilled' && oddsRes.value.length > 0) {
-      newHoldings.bets = bets.map((b: any, index: number) => {
-        const event = oddsRes.value[index % oddsRes.value.length];
-        const homeOdds = event?.bookmakers?.[0]?.markets?.[0]?.outcomes?.[0]?.price || 1.0;
-        const dp = homeOdds > 1.5 ? (homeOdds * 10) : -5;
-        return processHolding(b, dp);
-      })
-    } else {
-      newHoldings.bets = bets.map((c: any) => processHolding(c, 0))
-    }
-    
-    activeHoldings.value = newHoldings
-    
-    activeCategories.value = allCategories.map(cat => {
-      let catHoldings = cat.id === 'all' 
-        ? Object.values(newHoldings).flat()
-        : newHoldings[cat.id] || []
-        
-      const totalValue = catHoldings.reduce((sum, h) => sum + h.value, 0)
-      const avgReturn = catHoldings.length > 0 ? catHoldings.reduce((sum, h) => sum + h.returnPercent, 0) / catHoldings.length : 0;
-      
-      return {
-        ...cat,
-        value: totalValue,
-        returnPercent: avgReturn,
-        dayPercent: avgReturn
-      }
-    })
-    
-  } catch (e) {
-    console.error(e)
-    isError.value = true
-  } finally {
-    isLoading.value = false
-    lastUpdate.value = new Date()
-  }
-}
-
-onMounted(() => {
-  fetchData()
-})
-
-watch(() => user.value?.investments, () => {
-  fetchData()
-}, { deep: true })
+const fetchData = () => _fetchData(user.value)
 
 import { CHART_COLORS, commonTooltip, commonGrid, commonXAxis, commonYAxis } from '@/lib/chartTheme'
+
+// Generate a deterministic pseudo-history ending in the current live portfolio value
+const computedPortfolioPerformance = computed(() => {
+  const currentVal = activeCat.value === 'all' 
+    ? totalPortfolioValue.value 
+    : activeCategories.value.find(c => c.id === activeCat.value)?.value || 0;
+    
+  if (!currentVal || currentVal === 0) {
+    return [
+      { month: 'Apr', value: 0 },
+      { month: 'May', value: 0 },
+      { month: 'Jun', value: 0 },
+      { month: 'Jul', value: 0 },
+      { month: 'Aug', value: 0 },
+      { month: 'Sep', value: 0 }
+    ];
+  }
+  
+  const seed = currentVal % 100;
+  const trend = 0.01 + ((seed / 100) * 0.04);
+  const months = ['Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep'];
+  const data = [];
+  
+  // Start from 6 months ago, roughly (trend * 6) lower
+  let val = currentVal * (1 - (trend * 6));
+  for (let i = 0; i < 5; i++) {
+    data.push({ month: months[i], value: val });
+    val += (currentVal - val) * 0.25 + (Math.sin(i + seed) * currentVal * 0.005);
+  }
+  // The last month (now) is exactly the current value
+  data.push({ month: months[5], value: currentVal });
+  
+  return data;
+})
 
 const chartOption = computed(() => ({
   backgroundColor: 'transparent',
@@ -278,7 +142,7 @@ const chartOption = computed(() => ({
   xAxis: {
     ...commonXAxis,
     type: 'category',
-    data: portfolioPerformance.map(item => item.month),
+    data: computedPortfolioPerformance.value.map(item => item.month),
     boundaryGap: false
   },
   yAxis: {
@@ -291,7 +155,7 @@ const chartOption = computed(() => ({
   },
   series: [
     {
-      data: portfolioPerformance.map(item => item.value),
+      data: computedPortfolioPerformance.value.map(item => item.value),
       type: 'line',
       smooth: true,
       showSymbol: false,
@@ -440,9 +304,10 @@ const chartOption = computed(() => ({
                   {{ h.name }}
                 </span>
                 <span class="font-semibold tabular-nums text-foreground flex items-center gap-2">
-                  <span v-if="isItemVisible('invest_summary')">{{ formatCurrency(h.originalValue, h.originalCurrency) }}</span>
+                  <span v-if="isItemVisible('invest_summary')">{{ formatCurrency(getDisplayValue(h.value), displayCurrency) }}</span>
                   <span v-else>••••••</span>
-                  <Edit2 class="size-3 opacity-0 group-hover:opacity-100 text-muted-foreground transition-opacity" />
+                  <Bell class="size-4 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-primary transition-all" @click.stop="openAlertModal(h)" />
+                  <Edit2 class="size-4 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-primary transition-all" @click.stop="openEditModal(h)" />
                 </span>
               </div>
               
@@ -512,67 +377,10 @@ const chartOption = computed(() => ({
           </button>
         </div>
       </section>
-
-      <!-- Holdings for active category -->
-      <section class="mt-8">
-        <div class="mb-3 flex items-center gap-2">
-          <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-            {{ activeCategories.find(c => c.id === activeCat)?.label }} Top Movers
-          </h2>
-          <Badge variant="secondary">{{ topHoldings.length }}</Badge>
-        </div>
-        <Card class="border-border" v-if="topHoldings.length > 0">
-          <CardContent class="divide-y divide-border p-0">
-            <div
-              v-for="h in topHoldings"
-              :key="h.id"
-              class="flex items-center gap-4 px-4 py-4 sm:px-6"
-            >
-              <span :class="[
-                'flex size-10 items-center justify-center rounded-xl text-sm font-semibold overflow-hidden',
-                h.returnPercent >= 0 ? 'bg-primary/15 text-primary' : 'bg-destructive/15 text-destructive'
-              ]">
-                <AssetLogo :symbol="h.ticker" :fallback-icon="h.returnPercent >= 0 ? TrendingUp : TrendingDown" />
-              </span>
-              <div class="min-w-0 flex-1">
-                <p class="truncate font-medium text-foreground">
-                  {{ h.name }}
-                </p>
-                <p class="text-sm text-muted-foreground">{{ h.ticker }}</p>
-              </div>
-              <div class="text-right">
-                <p class="font-semibold text-foreground tabular-nums">
-                  <span v-if="isItemVisible('invest_cat_' + activeCat)">{{ formatCurrency(h.originalValue, h.originalCurrency) }}</span>
-                  <span v-else>••••••</span>
-                </p>
-                <div class="flex items-center justify-end gap-2">
-                  <span :class="[
-                    'inline-flex items-center gap-0.5 text-xs font-medium tabular-nums',
-                    h.returnPercent >= 0 ? 'text-primary' : 'text-destructive'
-                  ]">
-                    <ArrowUpRight v-if="h.returnPercent >= 0" class="size-3.5" />
-                    <ArrowDownRight v-else class="size-3.5" />
-                    {{ h.returnPercent > 0 ? '+' : '' }}{{ h.returnPercent.toFixed(1) }}%
-                  </span>
-                  <span class="text-xs text-muted-foreground">total</span>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card v-else class="border-border border-dashed p-8 text-center text-muted-foreground">
-          No top movers found for this category at the moment.
-        </Card>
-        
-        <div class="mt-6 flex justify-center">
-          <Button variant="outline" class="w-full sm:w-auto" @click="router.push(`/market-gainers?category=${activeCat}`)">
-            See more market options
-          </Button>
-        </div>
-      </section>
     </div>
     
     <AddInvestmentModal v-model:open="isAddModalOpen" :initial-category="activeCat !== 'all' ? activeCat : undefined" :default-currency="displayCurrency" />
     <EditInvestmentModal v-model:open="isEditModalOpen" :investment="selectedInvestmentToEdit" :default-currency="displayCurrency" />
+    <InvestmentAlertModal v-model:isOpen="isAlertModalOpen" :holding="selectedHoldingForAlert" />
   </DashboardLayout>
 </template>

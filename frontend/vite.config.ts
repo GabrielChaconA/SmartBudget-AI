@@ -31,6 +31,11 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/odds-api/, '')
       },
+      '/binance-api': {
+        target: 'https://api.binance.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/binance-api/, '/api/v3')
+      },
       '/fmp-api': {
         target: 'https://financialmodelingprep.com',
         changeOrigin: true,

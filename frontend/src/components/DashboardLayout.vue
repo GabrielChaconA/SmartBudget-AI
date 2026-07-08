@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useRoute } from 'vue-router'
-import { onMounted } from 'vue'
+import { onMounted, ref } from 'vue'
 import {
   LayoutDashboard,
   ChartColumnIncreasing,
@@ -12,7 +12,9 @@ import {
   CreditCard,
   TrendingUp,
   LogOut,
-  Camera
+  Camera,
+  Menu,
+  HelpCircle
 } from '@lucide/vue'
 
 import { cn } from "@/lib/utils"
@@ -40,6 +42,8 @@ onMounted(() => {
   fetchNotifications()
 })
 
+const isSidebarOpen = ref(true)
+
 const navItems = [
   { href: "/", label: "Home", short: "Home", icon: LayoutDashboard },
   { href: "/analytics", label: "Analytics", short: "Stats", icon: ChartColumnIncreasing },
@@ -55,35 +59,62 @@ const isActive = (href: string) => route.path === href
 <template>
   <div class="min-h-screen bg-background">
     <!-- Desktop sidebar -->
-    <aside class="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-border bg-sidebar px-4 py-6 lg:flex">
-      <div class="px-2">
-        <Logo />
+    <aside :class="cn(
+      'fixed inset-y-0 left-0 z-30 hidden flex-col border-r border-border bg-sidebar py-6 lg:flex transition-all duration-300',
+      isSidebarOpen ? 'w-64 px-4' : 'w-16 px-2 items-center'
+    )">
+      <div :class="cn('flex items-center gap-2', isSidebarOpen ? 'px-2' : 'justify-center')">
+        <Button variant="ghost" size="icon" @click="isSidebarOpen = !isSidebarOpen" class="hidden lg:flex shrink-0" aria-label="Toggle Sidebar">
+          <Menu class="size-5" />
+        </Button>
+        <Logo :showWordmark="isSidebarOpen" />
       </div>
-      <nav class="mt-8 flex flex-col gap-1">
+      <nav class="flex flex-col gap-1 mt-8">
         <RouterLink
           v-for="item in navItems"
           :key="item.href"
           :to="item.href"
+          :title="!isSidebarOpen ? item.label : undefined"
           :class="cn(
-            'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors',
+            'flex items-center rounded-xl py-2.5 text-sm font-medium transition-colors',
+            isSidebarOpen ? 'gap-3 px-3' : 'justify-center w-10 h-10',
             isActive(item.href)
               ? 'bg-sidebar-accent text-sidebar-accent-foreground'
               : 'text-muted-foreground hover:bg-muted hover:text-foreground'
           )"
         >
-          <component :is="item.icon" class="size-5" aria-hidden="true" />
-          {{ item.label }}
+          <component :is="item.icon" class="size-5 shrink-0" aria-hidden="true" />
+          <span v-if="isSidebarOpen">{{ item.label }}</span>
         </RouterLink>
       </nav>
+
+      <div class="mt-auto flex flex-col gap-1 pb-4">
+        <RouterLink
+          to="/support"
+          :title="!isSidebarOpen ? 'Dudas' : undefined"
+          :class="cn(
+            'flex items-center rounded-xl py-2.5 text-sm font-medium transition-colors',
+            isSidebarOpen ? 'gap-3 px-3' : 'justify-center w-10 h-10',
+            isActive('/support')
+              ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+              : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+          )"
+        >
+          <HelpCircle class="size-5 shrink-0" aria-hidden="true" />
+          <span v-if="isSidebarOpen">Dudas</span>
+        </RouterLink>
+      </div>
     </aside>
 
-    <div class="lg:pl-64">
+    <div :class="cn('transition-all duration-300', isSidebarOpen ? 'lg:pl-64' : 'lg:pl-16')">
       <!-- Header -->
       <header class="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-border bg-background/80 px-4 backdrop-blur-sm sm:px-6 lg:px-8">
-        <div class="lg:hidden">
-          <Logo />
+        <div class="flex items-center gap-3">
+          <div class="lg:hidden">
+            <Logo />
+          </div>
         </div>
-        <div class="relative hidden flex-1 items-center md:flex">
+        <div class="relative hidden flex-1 items-center md:flex lg:ml-0">
           <Search class="pointer-events-none absolute left-3 size-4 text-muted-foreground" />
           <input
             type="search"
@@ -131,7 +162,6 @@ const isActive = (href: string) => route.path === href
                   <p class="text-sm font-medium leading-none text-foreground">
                     {{ user.name || 'Anonymous' }}
                   </p>
-                  <p class="mt-1 text-xs text-muted-foreground">Premium</p>
                 </div>
               </button>
             </DropdownMenuTrigger>

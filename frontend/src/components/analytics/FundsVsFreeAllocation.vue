@@ -110,7 +110,7 @@ const chartOption = computed(() => {
     <CardHeader class="pb-2">
       <CardTitle class="text-base font-normal text-[#a1a1aa]">Dinero Disponible</CardTitle>
       <div class="mt-1 flex items-baseline gap-2">
-         <span class="text-3xl font-bold text-white tracking-tight">${{ new Intl.NumberFormat('en-US').format(totalMoney) }}</span>
+         <span class="text-3xl font-bold text-white tracking-tight">{{ new Intl.NumberFormat('en-US', { style: 'currency', currency: displayCurrency }).format(totalMoney) }}</span>
       </div>
       <CardDescription class="text-[#6b7280]">Cajas (Funds) vs Dinero Libre</CardDescription>
     </CardHeader>

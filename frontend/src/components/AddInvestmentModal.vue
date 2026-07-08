@@ -131,11 +131,11 @@ const handleSave = async () => {
         <div class="grid grid-cols-2 gap-4">
           <div class="space-y-2">
             <Label>Number of Shares</Label>
-            <Input type="number" v-model="quantity" placeholder="0.00" step="0.0001" />
+            <Input type="number" v-model="quantity" placeholder="0.00" step="any" />
           </div>
           <div class="space-y-2">
             <Label>Avg Price per Share</Label>
-            <Input type="number" v-model="averagePrice" placeholder="0.00" step="0.01" />
+            <Input type="number" v-model="averagePrice" placeholder="0.00" step="any" />
           </div>
         </div>
 
