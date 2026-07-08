@@ -1,10 +1,11 @@
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { finnhubService } from '@/services/finnhub'
 import { coingeckoService } from '@/services/coingecko'
 import { binanceService } from '@/services/binance'
 import { exchangeRateService } from '@/services/exchangeRate'
 import { oddsApiService } from '@/services/oddsApi'
 import type { InvestmentCategory, InvestmentHolding } from '@/lib/data'
+import { useUser } from '@/composables/useUser'
 
 // Module-level singleton state shared across all components
 const allCategories: InvestmentCategory[] = [
@@ -207,7 +208,19 @@ const fetchData = async (user: any) => {
   return fetchPromise
 }
 
+let isWatcherSetup = false
+
 export function useInvestments() {
+  if (!isWatcherSetup) {
+    const { user } = useUser()
+    watch(() => user.value?.investments, (newInvestments) => {
+      if (user.value) {
+        fetchData(user.value)
+      }
+    }, { deep: true, immediate: true })
+    isWatcherSetup = true
+  }
+
   return {
     allCategories,
     activeCategories,

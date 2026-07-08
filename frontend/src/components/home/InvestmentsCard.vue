@@ -9,11 +9,7 @@ import { Layers, Building2, Bitcoin, Dices, Eye, EyeOff } from '@lucide/vue'
 import { RouterLink } from 'vue-router'
 
 const { user, isItemVisible, toggleItemVisibility } = useUser()
-const { activeCategories, totalPortfolioValue, exchangeRate, fetchData } = useInvestments()
-
-onMounted(() => {
-  fetchData(user.value)
-})
+const { activeCategories, totalPortfolioValue, exchangeRate } = useInvestments()
 
 const displayCurrency = computed(() => user.value?.currency || 'MXN')
 

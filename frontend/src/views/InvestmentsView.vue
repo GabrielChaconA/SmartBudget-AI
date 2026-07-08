@@ -85,14 +85,6 @@ const getDisplayValue = (val: number) => {
 
 const fetchData = () => _fetchData(user.value)
 
-onMounted(() => {
-  fetchData()
-})
-
-watch(() => user.value?.investments, () => {
-  fetchData()
-}, { deep: true })
-
 import { CHART_COLORS, commonTooltip, commonGrid, commonXAxis, commonYAxis } from '@/lib/chartTheme'
 
 // Generate a deterministic pseudo-history ending in the current live portfolio value
