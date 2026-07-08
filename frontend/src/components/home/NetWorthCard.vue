@@ -3,6 +3,7 @@ import { TrendingUp, TrendingDown, RefreshCw, Eye, EyeOff } from '@lucide/vue'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { useUser } from '@/composables/useUser'
+import { useInvestments } from '@/composables/useInvestments'
 import { computed, ref, watch, onMounted } from 'vue'
 import { formatCurrency } from '@/lib/data'
 import { exchangeRateService } from '@/services/exchangeRate'
@@ -15,7 +16,8 @@ import VChart from 'vue-echarts'
 
 use([CanvasRenderer, LineChart, GridComponent, TooltipComponent])
 
-const { user, isBalancesVisible, isItemVisible, toggleItemVisibility, totalInvestmentsAmount } = useUser()
+const { user, isBalancesVisible, isItemVisible, toggleItemVisibility } = useUser()
+const { totalPortfolioValue, fetchData: fetchInvestmentsData } = useInvestments()
 
 const displayCurrency = ref(user.value?.currency || 'MXN')
 
@@ -30,6 +32,7 @@ const toggleCurrency = () => {
 const exchangeRate = ref(20.0)
 onMounted(async () => {
   exchangeRate.value = await exchangeRateService.getUsdMxnRate()
+  fetchInvestmentsData(user.value)
 })
 const getExchangeRate = () => exchangeRate.value
 
@@ -40,8 +43,8 @@ const baseBalance = computed(() => {
   }
   // Fund balances are subsets of Account balances (e.g. Cartera), so adding them here would double-count.
   // Also add investments!
-  // Add investments using the shared computed property
-  sum += totalInvestmentsAmount.value
+  // Add live-priced investments from useInvestments
+  sum += totalPortfolioValue.value
 
   return sum
 })

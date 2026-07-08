@@ -228,11 +228,11 @@ const isSubmitDisabled = computed(() => {
         <div class="grid grid-cols-2 gap-4">
           <div class="space-y-2">
             <Label>Cantidad a {{ mode === 'buy' ? 'Comprar' : 'Vender' }}</Label>
-            <Input type="number" v-model="tradeQuantity" placeholder="0.00" step="0.0001" />
+            <Input type="number" v-model="tradeQuantity" placeholder="0.00" step="any" />
           </div>
           <div class="space-y-2">
             <Label>Precio de Operación</Label>
-            <Input type="number" v-model="tradePrice" placeholder="0.00" step="0.01" />
+            <Input type="number" v-model="tradePrice" placeholder="0.00" step="any" />
           </div>
         </div>
         <p class="text-xs text-muted-foreground">La operación se registrará en la moneda original de esta inversión ({{ originalCurrency }}).</p>
@@ -258,11 +258,11 @@ const isSubmitDisabled = computed(() => {
         <div class="grid grid-cols-2 gap-4">
           <div class="space-y-2">
             <Label>Number of Shares</Label>
-            <Input type="number" v-model="quantity" placeholder="0.00" step="0.0001" />
+            <Input type="number" v-model="quantity" placeholder="0.00" step="any" />
           </div>
           <div class="space-y-2">
             <Label>Avg Price per Share</Label>
-            <Input type="number" v-model="averagePrice" placeholder="0.00" step="0.01" />
+            <Input type="number" v-model="averagePrice" placeholder="0.00" step="any" />
           </div>
         </div>
 

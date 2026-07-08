@@ -44,7 +44,8 @@ export const fmpService = {
   async getMarketMovers(type: 'gainers' | 'losers' = 'gainers'): Promise<FMPGainer[]> {
     // FMP API is blocking free keys for the gainers endpoint (403 Forbidden). 
     // Fallback: Fetch a list of popular stocks from Finnhub to simulate gainers/losers.
-    const popularTickers = ['AAPL', 'MSFT', 'NVDA', 'TSLA', 'AMZN', 'GOOGL', 'META', 'AMD', 'INTC', 'NFLX', 'SPOT', 'UBER', 'DIS', 'BA', 'KO', 'PEP', 'WMT', 'JPM', 'V', 'MA']
+    // Reduced to 10 to avoid hitting Finnhub's 60 req/min free limit too fast.
+    const popularTickers = ['AAPL', 'MSFT', 'NVDA', 'TSLA', 'AMZN', 'GOOGL', 'META', 'AMD', 'NFLX', 'SPOT']
     try {
       const quotes = await Promise.all(
         popularTickers.map(t => finnhubService.getQuote(t).then(q => ({ symbol: t, q })).catch(() => null))

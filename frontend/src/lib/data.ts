@@ -240,13 +240,16 @@ export interface InvestmentCategory {
 }
 
 export interface InvestmentHolding {
-  id: string;
-  name: string;
-  ticker: string;
-  value: number;
-  returnPercent: number;
-  dayPercent: number;
-}
+  id: string
+  name: string
+  ticker: string
+  value: number
+  originalValue?: number
+  originalCurrency?: string
+  returnPercent: number
+  dayPercent?: number
+  totalInvestedNative?: number
+};
 
 
 export const investmentCategories = [
@@ -297,9 +300,18 @@ export const aiInitialMessages = [
 ]
 
 export function formatCurrency(value: number, currency = "MXN") {
+  let maxDigits = 2
+  let minDigits = 2
+
+  // For very small values (like crypto prices), show more decimals
+  if (Math.abs(value) > 0 && Math.abs(value) < 1) {
+    maxDigits = 6
+  }
+
   return new Intl.NumberFormat("en-US", {
     style: "currency",
     currency,
-    maximumFractionDigits: 2,
+    minimumFractionDigits: minDigits,
+    maximumFractionDigits: maxDigits,
   }).format(value)
 }

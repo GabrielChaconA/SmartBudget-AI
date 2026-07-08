@@ -131,7 +131,6 @@ const isActive = (href: string) => route.path === href
                   <p class="text-sm font-medium leading-none text-foreground">
                     {{ user.name || 'Anonymous' }}
                   </p>
-                  <p class="mt-1 text-xs text-muted-foreground">Premium</p>
                 </div>
               </button>
             </DropdownMenuTrigger>

@@ -44,6 +44,7 @@ class InvestmentController extends Controller
         $validated = $request->validate([
             'symbol' => 'sometimes|string|max:50',
             'quantity' => 'sometimes|numeric',
+            'average_price' => 'sometimes|numeric',
             'currency' => 'nullable|string|max:10',
             'type' => 'sometimes|string|max:50',
             'diff_amount' => 'nullable|numeric', // Difference to apply to Cartera
