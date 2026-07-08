@@ -5,7 +5,7 @@ import DashboardLayout from '@/components/DashboardLayout.vue'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { portfolioPerformance, formatCurrency, investmentHoldings, type InvestmentCategory, type InvestmentHolding } from '@/lib/data'
+import { formatCurrency, investmentHoldings, type InvestmentCategory, type InvestmentHolding } from '@/lib/data'
 import { useUser } from '@/composables/useUser'
 import { useInvestments } from '@/composables/useInvestments'
 import { useRouter } from 'vue-router'
@@ -95,6 +95,40 @@ watch(() => user.value?.investments, () => {
 
 import { CHART_COLORS, commonTooltip, commonGrid, commonXAxis, commonYAxis } from '@/lib/chartTheme'
 
+// Generate a deterministic pseudo-history ending in the current live portfolio value
+const computedPortfolioPerformance = computed(() => {
+  const currentVal = activeCat.value === 'all' 
+    ? totalPortfolioValue.value 
+    : activeCategories.value.find(c => c.id === activeCat.value)?.value || 0;
+    
+  if (!currentVal || currentVal === 0) {
+    return [
+      { month: 'Apr', value: 0 },
+      { month: 'May', value: 0 },
+      { month: 'Jun', value: 0 },
+      { month: 'Jul', value: 0 },
+      { month: 'Aug', value: 0 },
+      { month: 'Sep', value: 0 }
+    ];
+  }
+  
+  const seed = currentVal % 100;
+  const trend = 0.01 + ((seed / 100) * 0.04);
+  const months = ['Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep'];
+  const data = [];
+  
+  // Start from 6 months ago, roughly (trend * 6) lower
+  let val = currentVal * (1 - (trend * 6));
+  for (let i = 0; i < 5; i++) {
+    data.push({ month: months[i], value: val });
+    val += (currentVal - val) * 0.25 + (Math.sin(i + seed) * currentVal * 0.005);
+  }
+  // The last month (now) is exactly the current value
+  data.push({ month: months[5], value: currentVal });
+  
+  return data;
+})
+
 const chartOption = computed(() => ({
   backgroundColor: 'transparent',
   tooltip: {
@@ -116,7 +150,7 @@ const chartOption = computed(() => ({
   xAxis: {
     ...commonXAxis,
     type: 'category',
-    data: portfolioPerformance.map(item => item.month),
+    data: computedPortfolioPerformance.value.map(item => item.month),
     boundaryGap: false
   },
   yAxis: {
@@ -129,7 +163,7 @@ const chartOption = computed(() => ({
   },
   series: [
     {
-      data: portfolioPerformance.map(item => item.value),
+      data: computedPortfolioPerformance.value.map(item => item.value),
       type: 'line',
       smooth: true,
       showSymbol: false,
