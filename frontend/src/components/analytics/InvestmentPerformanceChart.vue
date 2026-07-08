@@ -6,20 +6,20 @@ import * as echarts from 'echarts/core'
 import { BarChart } from 'echarts/charts'
 import { TooltipComponent, GridComponent } from 'echarts/components'
 import { CanvasRenderer } from 'echarts/renderers'
-import { investmentHoldings } from '@/lib/data'
+import { useInvestments } from '@/composables/useInvestments'
 import { CHART_COLORS, commonTooltip, commonGrid, commonXAxis, commonYAxis, getTranslucentStyle } from '@/lib/chartTheme'
 
 echarts.use([TooltipComponent, GridComponent, BarChart, CanvasRenderer])
 
-const chartOption = computed(() => {
-  const allHoldings = [
-    ...investmentHoldings.stocks,
-    ...investmentHoldings.etfs,
-    ...investmentHoldings.bets
-  ].sort((a, b) => b.returnPercent - a.returnPercent).slice(0, 8)
+const { allHoldings } = useInvestments()
 
-  const names = allHoldings.map(h => h.ticker)
-  const values = allHoldings.map(h => h.returnPercent)
+const chartOption = computed(() => {
+  const topHoldings = [...allHoldings.value]
+    .sort((a, b) => b.returnPercent - a.returnPercent)
+    .slice(0, 8)
+
+  const names = topHoldings.map(h => h.ticker)
+  const values = topHoldings.map(h => h.returnPercent)
 
   return {
     tooltip: {
