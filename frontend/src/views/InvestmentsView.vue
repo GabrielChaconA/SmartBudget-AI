@@ -16,7 +16,6 @@ import InvestmentAlertModal from '@/components/InvestmentAlertModal.vue'
 import { useI18n } from 'vue-i18n'
 
 const { t } = useI18n()
-import InvestmentAlertModal from '@/components/InvestmentAlertModal.vue'
 import { use } from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
 import { LineChart } from 'echarts/charts'
@@ -196,26 +195,33 @@ const chartOption = computed(() => ({
             {{ $t('investments.subtitle') }}
           </p>
         </div>
-        <div class="flex items-center gap-2 mt-4 sm:mt-0">
-          <Button class="bg-green-600 hover:bg-green-700 text-white rounded-full p-3 sm:px-6 sm:py-2" @click="isAddModalOpen = true">
-            <Plus class="size-8 sm:hidden" stroke-width="2.5" />
-            <span class="hidden sm:inline">{{ $t('investments.addInvestment') }}</span>
-          </Button>
-          <button 
+        <div class="flex flex-col items-end gap-2">
+          <div class="flex items-center gap-3">
+            <span v-if="lastUpdate" class="text-xs text-muted-foreground">
+              Última actualización: {{ lastUpdate.toLocaleTimeString() }}
+            </span>
+            <button 
               @click="toggleCurrency"
               class="flex items-center justify-center gap-1 rounded-full bg-primary/10 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-primary transition-colors hover:bg-primary/20"
             >
               <RefreshCw class="size-3" />
               {{ displayCurrency }}
+            </button>
             <Button variant="outline" size="sm" @click="fetchData" :disabled="isLoading">
               <RefreshCw class="size-4 mr-2" :class="{ 'animate-spin': isLoading }" />
               Actualizar
             </Button>
           </div>
-          <span v-if="isError" class="text-xs text-destructive flex items-center gap-1">
-            <AlertCircle class="size-3" /> Error al obtener algunos datos
-          </span>
+          <div class="flex items-center gap-2 mt-4 sm:mt-0">
+            <Button class="bg-green-600 hover:bg-green-700 text-white rounded-full p-3 sm:px-6 sm:py-2" @click="isAddModalOpen = true">
+              <Plus class="size-8 sm:hidden" stroke-width="2.5" />
+              <span class="hidden sm:inline">{{ $t('investments.addInvestment') }}</span>
+            </Button>
+          </div>
         </div>
+        <span v-if="isError" class="text-xs text-destructive flex items-center gap-1">
+          <AlertCircle class="size-3" /> Error al obtener algunos datos
+        </span>
       </header>
 
       <!-- Top summary -->
