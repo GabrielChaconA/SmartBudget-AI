@@ -85,7 +85,8 @@ const getDisplayValue = (val: number) => {
 
 const fetchData = () => _fetchData(user.value)
 
-import { CHART_COLORS, commonTooltip, commonGrid, commonXAxis, commonYAxis } from '@/lib/chartTheme'
+import { useChartTheme } from '@/lib/chartTheme'
+const { CHART_COLORS, commonTooltip, commonGrid, commonXAxis, commonYAxis } = useChartTheme()
 
 // Generate a deterministic pseudo-history ending in the current live portfolio value
 const computedPortfolioPerformance = computed(() => {
