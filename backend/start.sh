@@ -7,6 +7,12 @@ PORT=${PORT:-8000}
 echo "Running migrations..."
 php artisan migrate --force
 
+# Clear old caches first (important: avoids stale build-time cached env values)
+echo "Clearing old caches..."
+php artisan config:clear
+php artisan route:clear
+php artisan view:clear
+
 # Cache configuration, routes, and views for production performance
 echo "Caching config and routes..."
 php artisan config:cache

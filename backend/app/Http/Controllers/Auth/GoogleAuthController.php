@@ -5,6 +5,9 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 use Laravel\Socialite\Facades\Socialite;
 
 class GoogleAuthController extends Controller
@@ -18,29 +21,44 @@ class GoogleAuthController extends Controller
     {
         try {
             $googleUser = Socialite::driver('google')->stateless()->user();
-            
-            $user = User::updateOrCreate([
-                'google_id' => $googleUser->id,
-            ], [
-                'name' => $googleUser->name,
-                'email' => $googleUser->email,
-                'avatar' => $googleUser->avatar,
-            ]);
+
+            // Check if the google_id column exists (migration might not have run)
+            $hasGoogleId = Schema::hasColumn('users', 'google_id');
+
+            if ($hasGoogleId) {
+                $user = User::updateOrCreate(
+                    ['google_id' => $googleUser->id],
+                    [
+                        'name'   => $googleUser->name,
+                        'email'  => $googleUser->email,
+                        'avatar' => $googleUser->avatar,
+                    ]
+                );
+            } else {
+                // Fallback: use email as lookup key if google_id column doesn't exist
+                $user = User::updateOrCreate(
+                    ['email' => $googleUser->email],
+                    [
+                        'name'   => $googleUser->name,
+                        'avatar' => $googleUser->avatar ?? null,
+                    ]
+                );
+            }
 
             // Create default settings if new user
-            $settingsExist = \Illuminate\Support\Facades\DB::table('settings')->where('user_id', $user->id)->exists();
+            $settingsExist = DB::table('settings')->where('user_id', $user->id)->exists();
             if (!$settingsExist) {
-                \Illuminate\Support\Facades\DB::table('settings')->insert([
-                    'user_id' => $user->id,
-                    'currency' => 'MXN',
+                DB::table('settings')->insert([
+                    'user_id'        => $user->id,
+                    'currency'       => 'MXN',
                     'monthly_income' => 0,
-                    'created_at' => now(),
-                    'updated_at' => now()
+                    'created_at'     => now(),
+                    'updated_at'     => now()
                 ]);
-                \Illuminate\Support\Facades\DB::table('accounts')->insert([
-                    'user_id' => $user->id,
-                    'name' => 'Cartera',
-                    'balance' => 0,
+                DB::table('accounts')->insert([
+                    'user_id'    => $user->id,
+                    'name'       => 'Cartera',
+                    'balance'    => 0,
                     'created_at' => now(),
                     'updated_at' => now()
                 ]);
@@ -53,9 +71,12 @@ class GoogleAuthController extends Controller
             return redirect()->away($frontendUrl . '/login?token=' . $token);
 
         } catch (\Exception $e) {
-            \Log::error('Google Login Error: ' . $e->getMessage());
+            Log::error('Google Login Error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
             $frontendUrl = env('FRONTEND_URL', 'http://localhost:5173');
             return redirect()->away($frontendUrl . '/login?error=GoogleLoginFailed');
         }
     }
 }
+
