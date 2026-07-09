@@ -77,17 +77,17 @@ const GoogleIcon = {
 
 <template>
   <main class="flex min-h-screen flex-col lg:flex-row dark bg-background text-foreground">
-    <!-- Left: illustration panel (desktop) with login.jpeg background -->
+    <!-- Left: illustration panel (desktop only) -->
     <section class="relative hidden w-1/2 lg:flex overflow-hidden bg-cover bg-center" style="background-image: url('/login.jpeg');">
       <div class="absolute inset-0 bg-black/60"></div>
       
-      <div class="relative z-10 w-full h-full flex flex-col items-center justify-center p-12 text-white gap-8">
-        <h1 class="text-7xl font-extrabold tracking-tighter text-balance text-center drop-shadow-2xl">
+      <div class="relative z-10 w-full h-full hidden lg:flex flex-col items-center justify-center p-6 lg:p-12 text-white gap-4 lg:gap-8">
+        <h1 class="text-5xl lg:text-7xl font-extrabold tracking-tighter text-balance text-center drop-shadow-2xl">
           SmartBudget <span class="text-primary">AI</span>
         </h1>
         
         <div class="text-center w-full">
-          <h2 class="text-3xl font-semibold leading-snug tracking-tight text-balance">
+          <h2 class="text-2xl lg:text-3xl font-semibold leading-snug tracking-tight text-balance">
             Financial clarity, powered by intelligent insights.
           </h2>
           <p class="mt-3 text-lg leading-relaxed text-gray-200">
@@ -99,22 +99,30 @@ const GoogleIcon = {
     </section>
 
     <!-- Right: login form -->
-    <section class="flex flex-1 items-center justify-center px-6 py-12 relative overflow-y-auto">
-      <div class="w-full max-w-sm">
-        <div class="mb-8 flex flex-col items-center gap-6 text-center">
-          <div>
-            <h1 class="text-4xl font-bold tracking-tight text-foreground">
+    <section class="flex flex-1 flex-col items-center justify-start lg:justify-center lg:px-6 py-0 lg:py-12 relative overflow-y-auto w-full">
+      <div class="w-full lg:max-w-sm">
+        
+        <!-- Mobile Header with background / Desktop Header normal -->
+        <div class="mb-6 lg:mb-8 flex flex-col items-center justify-center gap-4 lg:gap-6 text-center 
+                    bg-[url('/login.jpeg')] bg-cover bg-center lg:bg-none 
+                    px-6 py-16 lg:px-0 lg:py-0 relative">
+          
+          <div class="absolute inset-0 bg-black/60 lg:hidden"></div>
+          
+          <div class="relative z-10 flex flex-col items-center">
+            <Logo class="h-10 w-auto lg:hidden mb-2" />
+            <h1 class="text-4xl font-bold tracking-tight text-white lg:text-foreground">
               Welcome
             </h1>
-            <p class="mt-2 text-sm text-muted-foreground">
+            <p class="mt-2 text-sm text-gray-200 lg:text-muted-foreground">
               Sign in or create an account to continue.
             </p>
           </div>
         </div>
 
-        <!-- Added flex-col to force correct tab content layout -->
-        <Tabs v-model="activeTab" class="w-full flex-col">
-          <TabsList class="grid w-full grid-cols-2 mb-6">
+        <div class="px-6 lg:px-0">
+          <Tabs v-model="activeTab" class="w-full flex-col">
+          <TabsList class="grid w-full grid-cols-2 mb-6 h-12 bg-zinc-900/50">
             <TabsTrigger value="login">Login</TabsTrigger>
             <TabsTrigger value="register">Register</TabsTrigger>
           </TabsList>
@@ -133,6 +141,7 @@ const GoogleIcon = {
                     v-model="email"
                     placeholder="you@example.com"
                     autocomplete="email"
+                    class="h-12 px-4 text-base bg-zinc-900/50 border-zinc-800 focus-visible:ring-primary"
                     required
                   />
                 </div>
@@ -152,12 +161,13 @@ const GoogleIcon = {
                     v-model="password"
                     placeholder="••••••••"
                     autocomplete="current-password"
+                    class="h-12 px-4 text-base bg-zinc-900/50 border-zinc-800 focus-visible:ring-primary"
                     required
                   />
                 </div>
               </div>
 
-              <Button type="submit" size="lg" class="w-full" :disabled="isLoading">
+              <Button type="submit" class="w-full h-12 text-base font-semibold" :disabled="isLoading">
                 <Loader2 v-if="isLoading" class="mr-2 h-4 w-4 animate-spin" />
                 Sign In
               </Button>
@@ -177,6 +187,7 @@ const GoogleIcon = {
                     type="text"
                     v-model="regName"
                     placeholder="John Doe"
+                    class="h-12 px-4 text-base bg-zinc-900/50 border-zinc-800 focus-visible:ring-primary"
                     required
                   />
                 </div>
@@ -188,6 +199,7 @@ const GoogleIcon = {
                     v-model="regEmail"
                     placeholder="you@example.com"
                     autocomplete="email"
+                    class="h-12 px-4 text-base bg-zinc-900/50 border-zinc-800 focus-visible:ring-primary"
                     required
                   />
                 </div>
@@ -198,6 +210,7 @@ const GoogleIcon = {
                     type="password"
                     v-model="regPassword"
                     placeholder="••••••••"
+                    class="h-12 px-4 text-base bg-zinc-900/50 border-zinc-800 focus-visible:ring-primary"
                     required
                   />
                 </div>
@@ -208,12 +221,13 @@ const GoogleIcon = {
                     type="password"
                     v-model="regPasswordConfirm"
                     placeholder="••••••••"
+                    class="h-12 px-4 text-base bg-zinc-900/50 border-zinc-800 focus-visible:ring-primary"
                     required
                   />
                 </div>
               </div>
 
-              <Button type="submit" size="lg" class="w-full" :disabled="isLoading">
+              <Button type="submit" class="w-full h-12 text-base font-semibold" :disabled="isLoading">
                 <Loader2 v-if="isLoading" class="mr-2 h-4 w-4 animate-spin" />
                 Sign Up
               </Button>
@@ -228,10 +242,11 @@ const GoogleIcon = {
             <span class="h-px flex-1 bg-border" />
           </div>
 
-          <Button variant="outline" size="lg" class="w-full" @click="handleGoogleLogin">
+          <Button variant="outline" class="w-full h-12 text-base font-medium bg-zinc-900/30 border-zinc-800 hover:bg-zinc-800" @click="handleGoogleLogin">
             <GoogleIcon />
             Continue with Google
           </Button>
+        </div>
         </div>
 
       </div>
