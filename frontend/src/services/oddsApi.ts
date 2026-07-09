@@ -25,6 +25,25 @@ export interface OddsEvent {
   }[];
 }
 
+export interface SportConfig {
+  key: string;
+  title: string;
+  description: string;
+}
+
+export const TOP_SPORTS: SportConfig[] = [
+  { key: 'americanfootball_nfl', title: 'NFL', description: 'US Football' },
+  { key: 'basketball_nba', title: 'NBA', description: 'US Basketball' },
+  { key: 'soccer_epl', title: 'Premier League', description: 'English Soccer' },
+  { key: 'soccer_uefa_champs_league', title: 'Champions League', description: 'European Soccer' },
+  { key: 'soccer_spain_la_liga', title: 'La Liga', description: 'Spanish Soccer' },
+  { key: 'baseball_mlb', title: 'MLB', description: 'US Baseball' },
+  { key: 'icehockey_nhl', title: 'NHL', description: 'US Hockey' },
+  { key: 'mma_mixed_martial_arts', title: 'MMA', description: 'Mixed Martial Arts' },
+  { key: 'tennis_atp_wimbledon', title: 'Wimbledon', description: 'ATP Tennis' },
+  { key: 'soccer_mexico_ligamx', title: 'Liga MX', description: 'Mexican Soccer' }
+]
+
 export const oddsApiService = {
   async getUpcomingOdds(sport: string = 'upcoming', limit: number = 5): Promise<OddsEvent[]> {
     try {

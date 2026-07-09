@@ -342,7 +342,7 @@ const chartOption = computed(() => ({
             v-for="cat in activeCategories"
             :key="cat.id"
             type="button"
-            @click="activeCat = cat.id"
+            @click="activeCat === cat.id && cat.id !== 'all' ? router.push({ path: '/market-gainers', query: { category: cat.id } }) : activeCat = cat.id"
             :class="[
               'rounded-xl border p-4 text-left transition-colors',
               activeCat === cat.id ? 'border-primary bg-accent' : 'border-border bg-card hover:border-primary/50'

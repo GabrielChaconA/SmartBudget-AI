@@ -13,7 +13,6 @@ export default defineConfig({
   server: {
     host: '0.0.0.0', // Listen on all network interfaces for Docker
     port: 5173,
-    strictPort: true,
     watch: {
       usePolling: true, // Necessary for some Windows/WSL/Docker setups
     },
@@ -40,6 +39,36 @@ export default defineConfig({
         target: 'https://financialmodelingprep.com',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/fmp-api/, '')
+      },
+      '/api-sports-football': {
+        target: 'https://v3.football.api-sports.io',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api-sports-football/, '')
+      },
+      '/api-sports-americanfootball': {
+        target: 'https://v1.american-football.api-sports.io',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api-sports-americanfootball/, '')
+      },
+      '/api-sports-basketball': {
+        target: 'https://v1.basketball.api-sports.io',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api-sports-basketball/, '')
+      },
+      '/api-sports-baseball': {
+        target: 'https://v1.baseball.api-sports.io',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api-sports-baseball/, '')
+      },
+      '/api-sports-hockey': {
+        target: 'https://v1.hockey.api-sports.io',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api-sports-hockey/, '')
+      },
+      '/sportmonks-api': {
+        target: 'https://api.sportmonks.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/sportmonks-api/, '')
       }
     }
   }
