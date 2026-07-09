@@ -1,9 +1,13 @@
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import path from 'path'
 
 // https://vite.dev/config/
-export default defineConfig({
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), '')
+  const apiTarget = env.VITE_API_URL || 'http://localhost:8000'
+
+  return {
   plugins: [vue()],
   resolve: {
     alias: {
@@ -18,11 +22,11 @@ export default defineConfig({
     },
     proxy: {
       '/api': {
-        target: 'http://smartbudget_api',
+        target: apiTarget,
         changeOrigin: true,
       },
       '/sanctum': {
-        target: 'http://smartbudget_api',
+        target: apiTarget,
         changeOrigin: true,
       },
       '/odds-api': {
@@ -72,4 +76,6 @@ export default defineConfig({
       }
     }
   }
+  }
 })
+

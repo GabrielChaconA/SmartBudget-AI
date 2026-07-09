@@ -4,6 +4,7 @@ import { Sparkles, ArrowUp, User as UserIcon } from '@lucide/vue'
 import DashboardLayout from '@/components/DashboardLayout.vue'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
+import { getInitials } from '@/lib/utils'
 import { aiChatStarters, aiInitialMessages, user } from '@/lib/data'
 
 type Message = { id: string; role: 'assistant' | 'user'; content: string }
@@ -88,9 +89,7 @@ function handleKeyDown(e: KeyboardEvent) {
           <Avatar class="size-8 border border-border">
             <template v-if="m.role === 'user'">
               <AvatarImage v-if="user.avatar" :src="user.avatar" :alt="user.name" />
-              <AvatarFallback>
-                <UserIcon class="size-4" />
-              </AvatarFallback>
+              <AvatarFallback class="text-xs font-medium">{{ getInitials(user.name) }}</AvatarFallback>
             </template>
             <template v-else>
               <AvatarFallback class="bg-primary/15 text-primary">

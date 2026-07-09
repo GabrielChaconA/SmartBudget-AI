@@ -22,6 +22,7 @@ import { useDark, useToggle } from '@vueuse/core'
 import { cn } from "@/lib/utils"
 import Logo from "@/components/Logo.vue"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { getInitials } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -53,7 +54,6 @@ const navItems = [
   { href: "/", label: "Home", short: "Home", icon: LayoutDashboard },
   { href: "/analytics", label: "Analytics", short: "Stats", icon: ChartColumnIncreasing },
   { href: "/investments", label: "Investments", short: "Invest", icon: TrendingUp },
-  { href: "/chat", label: "AI Chat", short: "Chat", icon: Sparkles },
   { href: "/memberships", label: "Memberships", short: "Subs", icon: CreditCard },
   { href: "/profile", label: "Profile", short: "Profile", icon: User },
 ]
@@ -167,7 +167,7 @@ const isActive = (href: string) => route.path === href
               <button class="ml-1 flex items-center gap-2 rounded-xl p-1 hover:bg-muted outline-none">
                 <Avatar class="size-9">
                   <AvatarImage :src="user?.avatar || ''" :alt="user?.name || 'User'" />
-                  <AvatarFallback>{{ user?.name ? user.name.substring(0, 2).toUpperCase() : 'ML' }}</AvatarFallback>
+                  <AvatarFallback>{{ getInitials(user?.name) }}</AvatarFallback>
                 </Avatar>
                 <div class="hidden pr-2 text-left sm:block">
                   <p class="text-sm font-medium leading-none text-foreground">

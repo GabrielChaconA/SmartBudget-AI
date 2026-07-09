@@ -76,7 +76,7 @@ const chartOption = computed(() => ({
       animationEasing: 'cubicOut'
     }
   ]
-})
+}))
 </script>
 
 <template>
