@@ -17,6 +17,10 @@ services:
         value: https://smartbudget-api.onrender.com
       - key: FRONTEND_URL
         value: https://smartbudget-app.onrender.com
+      - key: LOG_CHANNEL
+        value: stderr
+      - key: APP_KEY
+        sync: false
       - key: DB_CONNECTION
         value: pgsql
       - key: DB_HOST
