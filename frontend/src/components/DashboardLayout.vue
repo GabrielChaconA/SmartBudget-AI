@@ -53,7 +53,6 @@ const navItems = [
   { href: "/", label: "Home", short: "Home", icon: LayoutDashboard },
   { href: "/analytics", label: "Analytics", short: "Stats", icon: ChartColumnIncreasing },
   { href: "/investments", label: "Investments", short: "Invest", icon: TrendingUp },
-  { href: "/chat", label: "AI Chat", short: "Chat", icon: Sparkles },
   { href: "/memberships", label: "Memberships", short: "Subs", icon: CreditCard },
   { href: "/profile", label: "Profile", short: "Profile", icon: User },
 ]

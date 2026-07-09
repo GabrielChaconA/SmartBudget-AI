@@ -1,0 +1,46 @@
+services:
+  # BACKEND (Laravel API with Octane)
+  - type: web
+    name: smartbudget-api
+    env: docker
+    dockerContext: backend
+    dockerfilePath: backend/Dockerfile
+    envVars:
+      - key: APP_NAME
+        value: "SmartBudget AI"
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: false
+      - key: APP_URL
+        value: https://smartbudget-api.onrender.com
+      - key: FRONTEND_URL
+        value: https://smartbudget-app.onrender.com
+      - key: DB_CONNECTION
+        value: pgsql
+      - key: DB_HOST
+        sync: false
+      - key: DB_PORT
+        sync: false
+      - key: DB_DATABASE
+        sync: false
+      - key: DB_USERNAME
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: GOOGLE_REDIRECT_URI
+        value: https://smartbudget-api.onrender.com/api/auth/google/callback
+
+  # FRONTEND (Vue App)
+  - type: web
+    name: smartbudget-app
+    env: static
+    buildCommand: cd frontend && npm install && npm run build
+    staticPublishPath: frontend/dist
+    envVars:
+      - key: VITE_API_URL
+        value: https://smartbudget-api.onrender.com
