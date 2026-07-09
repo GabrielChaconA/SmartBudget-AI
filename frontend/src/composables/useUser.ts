@@ -44,8 +44,6 @@ export function useUser() {
       const response = await axios.get('/api/user');
       user.value = response.data;
       isInitialized.value = true;
-      // Auto-fix: sync Cartera balance with sum of funds (fixes negative free money)
-      axios.post('/api/reset-free-money').catch(() => {});
       exchangeRateService.getUsdMxnRate().then(rate => {
         globalExchangeRate.value = rate;
       }).catch(() => {});
@@ -80,7 +78,7 @@ export function useUser() {
       if (user.value) {
         const index = user.value.funds.findIndex((f: any) => f.id === id);
         if (index !== -1) {
-          user.value.funds[index] = { ...user.value.funds[index], ...data };
+          Object.assign(user.value.funds[index], data);
         }
       }
       return true;
@@ -96,7 +94,13 @@ export function useUser() {
       if (user.value) {
         const fund = user.value.funds.find((f: any) => f.id === fundId);
         if (fund) {
-          fund.allocations.push({ category_name: categoryName, amount, category_icon: icon });
+          const existingAlloc = fund.allocations.find((a: any) => a.category_name === categoryName);
+          if (existingAlloc) {
+            existingAlloc.amount = amount;
+            if (icon) existingAlloc.category_icon = icon;
+          } else {
+            fund.allocations.push({ category_name: categoryName, amount, category_icon: icon });
+          }
         }
       }
       return true;
@@ -106,12 +110,28 @@ export function useUser() {
     }
   };
 
-  const fetchIncomeStats = async () => {
+  const deleteAllocation = async (fundId: number, categoryName: string) => {
     try {
-      const response = await axios.get('/api/user/income-stats');
+      await axios.delete(`/api/funds/${fundId}/allocations/${categoryName}`);
+      if (user.value) {
+        const fund = user.value.funds.find((f: any) => f.id === fundId);
+        if (fund) {
+          fund.allocations = fund.allocations.filter((a: any) => a.category_name !== categoryName);
+        }
+      }
+      return true;
+    } catch (err) {
+      console.error('Error deleting allocation', err);
+      return false;
+    }
+  };
+
+  const fetchTransactionStats = async () => {
+    try {
+      const response = await axios.get('/api/user/transaction-stats');
       return response.data;
     } catch (err) {
-      console.error('Error fetching income stats:', err);
+      console.error('Error fetching transaction stats:', err);
       return [];
     }
   };
@@ -311,7 +331,8 @@ export function useUser() {
     createFund,
     updateFund,
     allocateFund,
-    fetchIncomeStats,
+    deleteAllocation,
+    fetchTransactionStats,
     searchSubscriptionCatalog,
     addSubscription,
     updateProfile,

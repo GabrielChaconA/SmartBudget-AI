@@ -244,8 +244,9 @@ export interface InvestmentHolding {
   name: string
   ticker: string
   value: number
-  originalValue?: number
-  originalCurrency?: string
+  originalValue: number
+  originalCurrency: string
+  created_at?: string
   returnPercent: number
   dayPercent?: number
   totalInvestedNative?: number

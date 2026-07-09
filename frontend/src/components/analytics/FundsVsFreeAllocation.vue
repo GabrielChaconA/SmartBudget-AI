@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, inject, ref, onMounted } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { useUser } from '@/composables/useUser'
 import VChart from 'vue-echarts'
@@ -13,37 +13,37 @@ import { exchangeRateService } from '@/services/exchangeRate'
 echarts.use([TooltipComponent, LegendComponent, PieChart, CanvasRenderer])
 
 const { freeMoney, user } = useUser()
-const displayCurrency = inject('displayCurrency', ref('MXN'))
+const props = defineProps<{
+  displayCurrency: string
+}>()
 
 const exchangeRate = ref(20.0)
 onMounted(async () => {
   exchangeRate.value = await exchangeRateService.getUsdMxnRate()
 })
 
-const toDisplayCurrency = (val: number, cur: string) => {
-  let baseVal = val
-  if (cur === 'USD' && user.value?.currency === 'MXN') baseVal *= exchangeRate.value
-  if (cur === 'MXN' && user.value?.currency === 'USD') baseVal /= exchangeRate.value
-  
-  if (displayCurrency.value === 'USD' && user.value?.currency === 'MXN') return baseVal / exchangeRate.value
-  if (displayCurrency.value === 'MXN' && user.value?.currency === 'USD') return baseVal * exchangeRate.value
-  return baseVal
+const convertToDisplay = (val: number) => {
+  const userCur = user.value?.currency || 'MXN'
+  if (userCur === props.displayCurrency) return val
+  if (userCur === 'MXN' && props.displayCurrency === 'USD') return val / exchangeRate.value
+  if (userCur === 'USD' && props.displayCurrency === 'MXN') return val * exchangeRate.value
+  return val
 }
 
 const totalMoney = computed(() => {
   const fundsTotal = (user.value?.funds || []).reduce((acc: number, f: any) => acc + parseFloat(f.balance), 0)
   const val = freeMoney.value + fundsTotal
-  return toDisplayCurrency(val, user.value?.currency || 'MXN')
+  return convertToDisplay(val)
 })
 
 const chartOption = computed(() => {
   const fundsData = (user.value?.funds || []).map((f: any) => ({
-    value: toDisplayCurrency(parseFloat(f.balance), user.value?.currency || 'MXN'),
+    value: convertToDisplay(parseFloat(f.balance)),
     name: f.name || 'Caja'
   })).filter((item: any) => item.value > 0)
 
   let rawData = [
-    { value: toDisplayCurrency(freeMoney.value, user.value?.currency || 'MXN'), name: 'Dinero Libre' },
+    { value: convertToDisplay(freeMoney.value), name: 'Dinero Libre' },
     ...fundsData
   ].filter(item => item.value > 0)
 
@@ -65,7 +65,7 @@ const chartOption = computed(() => {
       formatter: (params: any) => {
         const val = new Intl.NumberFormat('en-US', {
           style: 'currency',
-          currency: displayCurrency.value
+          currency: props.displayCurrency
         }).format(params.value)
         return `<span style="color:${CHART_COLORS.textSecondary}">${params.name}</span><br/><span style="color:${CHART_COLORS.textPrimary};font-weight:700;font-size:14px;">${val}</span> <span style="font-size:12px;color:${CHART_COLORS.textTertiary}">(${params.percent}%)</span>`
       }

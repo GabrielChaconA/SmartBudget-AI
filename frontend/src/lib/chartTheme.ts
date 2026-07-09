@@ -11,7 +11,19 @@ export const CHART_COLORS = {
   gridLine: 'rgba(255,255,255,0.08)',
   tooltipBg: '#18181b', // Dark background for tooltip
   tooltipBorder: 'rgba(255,255,255,0.05)',
-  pieColors: ['#4ade80', '#22c55e', '#16a34a', '#15803d', '#166534', '#14532d']
+  pieColors: ['#4ade80', '#22c55e', '#16a34a', '#15803d', '#166534', '#14532d'],
+  distinctColors: [
+    '#3b82f6', // blue
+    '#10b981', // green
+    '#f59e0b', // amber
+    '#ec4899', // pink
+    '#8b5cf6', // purple
+    '#06b6d4', // cyan
+    '#ef4444', // red
+    '#84cc16', // lime
+    '#f97316', // orange
+    '#14b8a6', // teal
+  ]
 }
 
 export const getTranslucentStyle = (hex: string, opacity = 0.2) => {

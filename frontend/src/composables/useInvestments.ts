@@ -117,6 +117,7 @@ const fetchData = async (user: any) => {
           value: currentValueBase,
           originalValue: currentValueNative,
           originalCurrency: h.currency || 'MXN',
+          created_at: h.created_at,
           returnPercent: historicalReturn,
           dayPercent: dp,
           totalInvestedNative: originalValueNative
@@ -154,6 +155,7 @@ const fetchData = async (user: any) => {
               value: currentValueInUserCurrency,
               originalValue: currentValueUsd,
               originalCurrency: 'USD',
+              created_at: h.created_at,
               returnPercent: historicalReturn,
               dayPercent: market.price_change_percentage_24h || 0,
               totalInvestedNative: originalValueUsd

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, inject, ref, onMounted } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { useUser } from '@/composables/useUser'
 import VChart from 'vue-echarts'
@@ -13,28 +13,28 @@ import { exchangeRateService } from '@/services/exchangeRate'
 echarts.use([TooltipComponent, GridComponent, BarChart, CanvasRenderer])
 
 const { user } = useUser()
-const displayCurrency = inject('displayCurrency', ref('MXN'))
+const props = defineProps<{
+  displayCurrency: string
+}>()
 
 const exchangeRate = ref(20.0)
 onMounted(async () => {
   exchangeRate.value = await exchangeRateService.getUsdMxnRate()
 })
 
-const toDisplayCurrency = (val: number, cur: string) => {
-  let baseVal = val
-  if (cur === 'USD' && user.value?.currency === 'MXN') baseVal *= exchangeRate.value
-  if (cur === 'MXN' && user.value?.currency === 'USD') baseVal /= exchangeRate.value
-  
-  if (displayCurrency.value === 'USD' && user.value?.currency === 'MXN') return baseVal / exchangeRate.value
-  if (displayCurrency.value === 'MXN' && user.value?.currency === 'USD') return baseVal * exchangeRate.value
-  return baseVal
+const convertToDisplay = (val: number) => {
+  const userCur = user.value?.currency || 'MXN'
+  if (userCur === props.displayCurrency) return val
+  if (userCur === 'MXN' && props.displayCurrency === 'USD') return val / exchangeRate.value
+  if (userCur === 'USD' && props.displayCurrency === 'MXN') return val * exchangeRate.value
+  return val
 }
 
 const totalSubscriptionsCost = computed(() => {
   const total = (user.value?.subscriptions || [])
     .filter((s: any) => s.status !== 'inactive')
     .reduce((acc, s) => acc + (s.billing_cycle === 'yearly' ? parseFloat(s.amount) / 12 : parseFloat(s.amount)), 0)
-  return toDisplayCurrency(total, user.value?.currency || 'MXN')
+  return convertToDisplay(total)
 })
 
 const chartOption = computed(() => {
@@ -44,7 +44,7 @@ const chartOption = computed(() => {
     .map((s: any) => {
       // Calculate monthly equivalent
       let monthlyCost = s.billing_cycle === 'yearly' ? parseFloat(s.amount) / 12 : parseFloat(s.amount)
-      monthlyCost = toDisplayCurrency(monthlyCost, s.currency || user.value?.currency || 'MXN')
+      monthlyCost = convertToDisplay(monthlyCost)
       return { name: s.name, cost: monthlyCost }
     })
     .sort((a, b) => a.cost - b.cost) // Sort ascending for horizontal bar (largest at top)
@@ -60,7 +60,7 @@ const chartOption = computed(() => {
       formatter: (params: any) => {
         const val = new Intl.NumberFormat('en-US', {
           style: 'currency',
-          currency: displayCurrency.value
+          currency: props.displayCurrency
         }).format(params[0].value)
         return `<span style="color:${CHART_COLORS.textSecondary}">${params[0].name}</span><br/><span style="color:${CHART_COLORS.textPrimary};font-weight:700;font-size:14px;">${val} <span style="font-size:12px;color:${CHART_COLORS.textTertiary}">/ mes</span></span>`
       }
