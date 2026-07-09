@@ -51,9 +51,31 @@ export function useAuth() {
     }
   };
 
+  const register = async (name: string, email: string, password: string) => {
+    isLoading.value = true;
+    error.value = null;
+    try {
+      const response = await axios.post('/api/register', { name, email, password, password_confirmation: password });
+      
+      const token = response.data.access_token;
+      if (token) {
+        localStorage.setItem('auth_token', token);
+        axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+        return true;
+      }
+      return false;
+    } catch (err: any) {
+      error.value = err.response?.data?.message || err.message || 'Registration failed';
+      return false;
+    } finally {
+      isLoading.value = false;
+    }
+  };
+
   return {
     login,
     logout,
+    register,
     isLoading,
     error,
     isAuthenticated
