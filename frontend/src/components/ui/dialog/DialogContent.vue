@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { XIcon } from '@lucide/vue';
+import { XIcon, ChevronDown } from '@lucide/vue';
 
 import type { DialogContentEmits, DialogContentProps } from "reka-ui"
 import type { HTMLAttributes } from "vue"
@@ -34,7 +34,7 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits)
     <DialogContent
       data-slot="dialog-content"
       v-bind="{ ...$attrs, ...forwarded }"
-      :class="cn('bg-popover text-popover-foreground data-open:animate-in data-closed:animate-out data-closed:fade-out-0 data-open:fade-in-0 data-closed:zoom-out-95 data-open:zoom-in-95 ring-foreground/10 grid max-w-[calc(100%-2rem)] gap-4 rounded-xl p-4 text-sm ring-1 duration-100 sm:max-w-sm fixed top-1/2 left-1/2 z-50 w-full -translate-x-1/2 -translate-y-1/2 outline-none', props.class)"
+      :class="cn('bg-popover text-popover-foreground data-open:animate-in data-closed:animate-out data-closed:fade-out-0 data-open:fade-in-0 data-closed:zoom-out-95 data-open:zoom-in-95 ring-foreground/10 grid max-w-[calc(100%-2rem)] max-h-[85vh] overflow-y-auto gap-5 rounded-2xl p-5 sm:p-6 text-sm ring-1 duration-100 sm:max-w-sm fixed top-1/2 left-1/2 z-50 w-full -translate-x-1/2 -translate-y-1/2 outline-none custom-scrollbar', props.class)"
     >
       <slot />
 
@@ -43,8 +43,9 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits)
         data-slot="dialog-close"
         as-child
       >
-        <Button variant="ghost" class="absolute top-2 right-2" size="icon-sm">
-          <XIcon />
+        <Button variant="ghost" class="absolute top-2 right-2 rounded-full lg:bg-transparent bg-zinc-800/50" size="icon-sm">
+          <ChevronDown class="block lg:hidden size-5" />
+          <XIcon class="hidden lg:block size-4" />
           <span class="sr-only">Close</span>
         </Button>
       </DialogClose>
