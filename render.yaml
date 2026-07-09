@@ -3,6 +3,7 @@ services:
   - type: web
     name: smartbudget-api
     env: docker
+    plan: free
     dockerContext: backend
     dockerfilePath: backend/Dockerfile
     envVars:
