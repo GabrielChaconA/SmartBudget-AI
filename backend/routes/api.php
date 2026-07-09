@@ -310,4 +310,19 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Exchange Rate
     Route::get('/exchange-rate', [\App\Http\Controllers\ExchangeRateController::class, 'getRate']);
+
+    // Sports Logo Server Cache
+    Route::get('/sports/logos', function () {
+        return response()->json(\Illuminate\Support\Facades\Cache::get('sports_logos', []));
+    });
+    Route::post('/sports/logos', function (Request $request) {
+        $key = $request->input('key');
+        $url = $request->input('url');
+        $logos = \Illuminate\Support\Facades\Cache::get('sports_logos', []);
+        if ($key) {
+            $logos[$key] = $url;
+            \Illuminate\Support\Facades\Cache::put('sports_logos', $logos, 60*60*24*30); // 30 days
+        }
+        return response()->json(['success' => true]);
+    });
 });
