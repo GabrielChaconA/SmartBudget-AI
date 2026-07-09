@@ -62,11 +62,25 @@ Route::middleware('auth:sanctum')->group(function () {
                 ->where('id', $account->id)
                 ->update(['balance' => \Illuminate\Support\Facades\DB::raw('balance + ' . $amount)]);
         } else {
-            \Illuminate\Support\Facades\DB::table('accounts')->insert([
+            $accountId = \Illuminate\Support\Facades\DB::table('accounts')->insertGetId([
                 'user_id' => $userId,
                 'name' => 'Cartera',
                 'type' => 'cash',
                 'balance' => $amount,
+                'created_at' => now(),
+                'updated_at' => now()
+            ]);
+            $account = (object)['id' => $accountId];
+        }
+
+        if ($amount < 0) {
+            \Illuminate\Support\Facades\DB::table('transactions')->insert([
+                'user_id' => $userId,
+                'account_id' => $account->id,
+                'type' => 'expense',
+                'amount' => abs($amount),
+                'description' => 'Retiro de Dinero Libre',
+                'date' => now(),
                 'created_at' => now(),
                 'updated_at' => now()
             ]);
@@ -217,13 +231,28 @@ Route::middleware('auth:sanctum')->group(function () {
         return response()->json(['success' => true]);
     });
 
-    Route::get('/user/income-stats', function (Request $request) {
+    Route::delete('/funds/{id}/allocations/{categoryName}', function (Request $request, $id, $categoryName) {
+        $category = \Illuminate\Support\Facades\DB::table('categories')
+            ->where('name', $categoryName)
+            ->first();
+
+        if ($category) {
+            \Illuminate\Support\Facades\DB::table('fund_allocations')
+                ->where('fund_id', $id)
+                ->where('category_id', $category->id)
+                ->delete();
+        }
+
+        return response()->json(['success' => true]);
+    });
+
+    Route::get('/user/transaction-stats', function (Request $request) {
         $userId = $request->user()->id;
 
         $transactions = \Illuminate\Support\Facades\DB::table('transactions')
             ->where('user_id', $userId)
-            ->where('type', 'income')
-            ->select('amount', 'date')
+            ->whereIn('type', ['income', 'expense'])
+            ->select('amount', 'date', 'type')
             ->orderBy('date', 'asc')
             ->get();
 

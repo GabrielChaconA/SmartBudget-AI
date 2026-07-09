@@ -1,13 +1,11 @@
 <script setup lang="ts">
-import { ref, watch, provide } from 'vue'
+import { ref, watch } from 'vue'
 import { RefreshCw } from '@lucide/vue'
 import DashboardLayout from '@/components/DashboardLayout.vue'
-import AnalyticsFilters from '@/components/analytics/AnalyticsFilters.vue'
-import TotalWealthAllocation from '@/components/analytics/TotalWealthAllocation.vue'
+import CurrentVsWithdrawnChart from '@/components/analytics/CurrentVsWithdrawnChart.vue'
 import FundsVsFreeAllocation from '@/components/analytics/FundsVsFreeAllocation.vue'
 import InvestmentPerformanceChart from '@/components/analytics/InvestmentPerformanceChart.vue'
 import MonthlySubscriptionsChart from '@/components/analytics/MonthlySubscriptionsChart.vue'
-import AllFundsAllocation from '@/components/analytics/AllFundsAllocation.vue'
 import { useUser } from '@/composables/useUser'
 
 const { user } = useUser()
@@ -21,7 +19,6 @@ const toggleCurrency = () => {
   displayCurrency.value = displayCurrency.value === 'MXN' ? 'USD' : 'MXN'
 }
 
-provide('displayCurrency', displayCurrency)
 </script>
 
 <template>
@@ -47,26 +44,22 @@ provide('displayCurrency', displayCurrency)
         </button>
       </div>
 
-      <!-- Filters -->
-      <AnalyticsFilters />
+
 
       <!-- Gráficas Pequeñas (Máximo 2 juntas en PC) -->
       <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <TotalWealthAllocation :key="displayCurrency" />
-        <FundsVsFreeAllocation :key="displayCurrency" />
+        <CurrentVsWithdrawnChart :display-currency="displayCurrency" />
+        <FundsVsFreeAllocation :display-currency="displayCurrency" />
       </div>
 
-      <!-- Gráficas Grandes (1 por fila abajo) -->
-      <div class="grid grid-cols-1 gap-6">
-        <AllFundsAllocation :key="displayCurrency" />
-      </div>
+
 
       <div class="grid grid-cols-1 gap-6">
-        <InvestmentPerformanceChart />
+        <InvestmentPerformanceChart :display-currency="displayCurrency" />
       </div>
 
       <div class="grid grid-cols-1 gap-6">
-        <MonthlySubscriptionsChart :key="displayCurrency" />
+        <MonthlySubscriptionsChart :display-currency="displayCurrency" />
       </div>
     </div>
   </DashboardLayout>
