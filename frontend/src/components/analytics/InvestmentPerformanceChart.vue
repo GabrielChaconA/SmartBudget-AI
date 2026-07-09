@@ -8,7 +8,7 @@ import { TooltipComponent, GridComponent, LegendComponent } from 'echarts/compon
 import { CanvasRenderer } from 'echarts/renderers'
 import { useInvestments } from '@/composables/useInvestments'
 import { useUser } from '@/composables/useUser'
-import { CHART_COLORS, commonTooltip, commonGrid, commonYAxis } from '@/lib/chartTheme'
+import { useChartTheme } from '@/lib/chartTheme'
 
 echarts.use([TooltipComponent, GridComponent, LegendComponent, LineChart, CanvasRenderer])
 
@@ -67,6 +67,7 @@ const getHoldingValueAt = (h: any, t: number, currentNow: number, displayCur: st
   return origVal + (currVal - origVal) * clampedRatio;
 }
 
+const { CHART_COLORS, commonTooltip, commonGrid, commonYAxis } = useChartTheme()
 const chartOption = computed(() => {
   const now = new Date().getTime()
   const msPerDay = 24 * 60 * 60 * 1000
@@ -242,12 +243,12 @@ const chartOption = computed(() => {
 </script>
 
 <template>
-  <Card class="border-border/50 bg-[#111111] flex flex-col rounded-[20px] shadow-none overflow-hidden pt-4 sm:pt-6">
+  <Card class="border-border/50 bg-card flex flex-col rounded-[20px] shadow-none overflow-hidden pt-4 sm:pt-6">
     <CardHeader class="px-4 sm:px-6 pb-2">
       <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
         <div>
-          <CardTitle class="text-base font-normal text-[#a1a1aa]">Rendimiento de Inversiones</CardTitle>
-          <CardDescription class="text-[#6b7280] mt-1">
+          <CardTitle class="text-base font-normal text-muted-foreground">Rendimiento de Inversiones</CardTitle>
+          <CardDescription class="text-muted-foreground mt-1">
             {{ activeCat === 'all' ? 'Evolución del valor por categoría' : 'Evolución de los activos individuales' }}
           </CardDescription>
         </div>
@@ -273,7 +274,7 @@ const chartOption = computed(() => {
           :class="[
             'px-3 py-1 text-xs font-medium rounded-full border transition-all flex items-center gap-1.5',
             activeCat === 'all' 
-              ? 'bg-white/10 text-white border-white/20' 
+              ? 'bg-white/10 text-foreground border-white/20' 
               : 'bg-transparent text-muted-foreground border-border hover:border-white/20'
           ]"
         >
@@ -286,7 +287,7 @@ const chartOption = computed(() => {
           :class="[
             'px-3 py-1 text-xs font-medium rounded-full border transition-all flex items-center gap-1.5',
             activeCat === cat.id
-              ? 'bg-white/10 text-white border-white/20' 
+              ? 'bg-white/10 text-foreground border-white/20' 
               : 'bg-transparent text-muted-foreground border-border hover:border-white/20'
           ]"
         >

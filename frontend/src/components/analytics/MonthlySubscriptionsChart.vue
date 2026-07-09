@@ -7,7 +7,7 @@ import * as echarts from 'echarts/core'
 import { BarChart } from 'echarts/charts'
 import { TooltipComponent, GridComponent } from 'echarts/components'
 import { CanvasRenderer } from 'echarts/renderers'
-import { CHART_COLORS, commonTooltip, commonGrid, commonXAxis, commonYAxis, getTranslucentStyle } from '@/lib/chartTheme'
+import { useChartTheme } from '@/lib/chartTheme'
 import { exchangeRateService } from '@/services/exchangeRate'
 
 echarts.use([TooltipComponent, GridComponent, BarChart, CanvasRenderer])
@@ -37,6 +37,7 @@ const totalSubscriptionsCost = computed(() => {
   return convertToDisplay(total)
 })
 
+const { CHART_COLORS, commonTooltip, commonGrid, commonXAxis, commonYAxis, getTranslucentStyle } = useChartTheme()
 const chartOption = computed(() => {
   // Only active subscriptions
   const subs = (user.value?.subscriptions || [])
@@ -118,17 +119,17 @@ const chartOption = computed(() => {
 </script>
 
 <template>
-  <Card class="border-border/50 bg-[#111111] flex flex-col rounded-[20px] shadow-none overflow-hidden pt-4 sm:pt-6">
+  <Card class="border-border/50 bg-card flex flex-col rounded-[20px] shadow-none overflow-hidden pt-4 sm:pt-6">
     <CardHeader class="px-4 sm:px-6 pb-2">
-      <CardTitle class="text-base font-normal text-[#a1a1aa]">Gasto en Suscripciones</CardTitle>
+      <CardTitle class="text-base font-normal text-muted-foreground">Gasto en Suscripciones</CardTitle>
       <div class="mt-1 flex items-baseline gap-2">
-         <span class="text-3xl font-bold text-white tracking-tight">${{ new Intl.NumberFormat('en-US').format(totalSubscriptionsCost) }}</span>
-         <span class="text-sm font-medium text-[#6b7280]">/ mes</span>
+         <span class="text-3xl font-bold text-foreground tracking-tight">${{ new Intl.NumberFormat('en-US').format(totalSubscriptionsCost) }}</span>
+         <span class="text-sm font-medium text-muted-foreground">/ mes</span>
       </div>
-      <CardDescription class="text-[#6b7280]">Costo mensual por suscripción activa</CardDescription>
+      <CardDescription class="text-muted-foreground">Costo mensual por suscripción activa</CardDescription>
     </CardHeader>
     <CardContent class="h-[300px] w-full p-0 mt-4">
-      <div v-if="(user?.subscriptions || []).length === 0" class="text-[#6b7280] text-sm flex h-full items-center justify-center">
+      <div v-if="(user?.subscriptions || []).length === 0" class="text-muted-foreground text-sm flex h-full items-center justify-center">
         No hay suscripciones activas
       </div>
       <VChart v-else :option="chartOption" autoresize class="w-full h-full" />

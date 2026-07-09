@@ -7,7 +7,7 @@ import * as echarts from 'echarts/core'
 import { BarChart } from 'echarts/charts'
 import { TooltipComponent, GridComponent } from 'echarts/components'
 import { CanvasRenderer } from 'echarts/renderers'
-import { CHART_COLORS, commonTooltip, commonGrid, commonXAxis, commonYAxis, getTranslucentStyle } from '@/lib/chartTheme'
+import { useChartTheme } from '@/lib/chartTheme'
 import { exchangeRateService } from '@/services/exchangeRate'
 
 echarts.use([TooltipComponent, GridComponent, BarChart, CanvasRenderer])
@@ -35,6 +35,7 @@ const totalFundsBalance = computed(() => {
   return toDisplayCurrency(total, user.value?.currency || 'MXN')
 })
 
+const { CHART_COLORS, commonTooltip, commonGrid, commonXAxis, commonYAxis, getTranslucentStyle } = useChartTheme()
 const chartOption = computed(() => {
   const fundsData = (user.value?.funds || [])
     .map((f: any) => ({
@@ -106,16 +107,16 @@ const chartOption = computed(() => {
 </script>
 
 <template>
-  <Card class="border-border/50 bg-[#111111] flex flex-col rounded-[20px] shadow-none p-2 sm:p-4">
+  <Card class="border-border/50 bg-card flex flex-col rounded-[20px] shadow-none p-2 sm:p-4">
     <CardHeader class="pb-2">
-      <CardTitle class="text-base font-normal text-[#a1a1aa]">Balance de Cajas</CardTitle>
+      <CardTitle class="text-base font-normal text-muted-foreground">Balance de Cajas</CardTitle>
       <div class="mt-1 flex items-baseline gap-2">
-         <span class="text-3xl font-bold text-white tracking-tight">${{ new Intl.NumberFormat('en-US').format(totalFundsBalance) }}</span>
+         <span class="text-3xl font-bold text-foreground tracking-tight">${{ new Intl.NumberFormat('en-US').format(totalFundsBalance) }}</span>
       </div>
-      <CardDescription class="text-[#6b7280]">Dinero almacenado en cada caja individual</CardDescription>
+      <CardDescription class="text-muted-foreground">Dinero almacenado en cada caja individual</CardDescription>
     </CardHeader>
     <CardContent class="h-[300px] w-full p-0 mt-4">
-      <div v-if="(user?.funds || []).length === 0" class="text-[#6b7280] text-sm flex h-full items-center justify-center">
+      <div v-if="(user?.funds || []).length === 0" class="text-muted-foreground text-sm flex h-full items-center justify-center">
         No hay cajas creadas o con fondos
       </div>
       <VChart v-else :option="chartOption" autoresize class="w-full h-full" />

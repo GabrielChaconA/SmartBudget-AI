@@ -15,7 +15,7 @@ import { investmentHoldings as fallbackHoldings } from '@/lib/data'
 import { finnhubService } from '@/services/finnhub'
 import { coingeckoService } from '@/services/coingecko'
 import { oddsApiService } from '@/services/oddsApi'
-import { CHART_COLORS, getTranslucentStyle } from '@/lib/chartTheme'
+import { useChartTheme } from '@/lib/chartTheme'
 
 echarts.use([
   TitleComponent,
@@ -44,6 +44,7 @@ const totalValue = computed(() => {
   return chartData.value.reduce((acc, curr) => acc + curr.value, 0)
 })
 
+const { CHART_COLORS, getTranslucentStyle } = useChartTheme()
 const chartOption = computed(() => ({
   backgroundColor: 'transparent',
   tooltip: {
@@ -156,16 +157,16 @@ onMounted(() => {
 </script>
 
 <template>
-  <Card class="border-border/50 bg-[#111111] flex flex-col rounded-[20px] shadow-none p-2 sm:p-4 relative">
+  <Card class="border-border/50 bg-card flex flex-col rounded-[20px] shadow-none p-2 sm:p-4 relative">
     <CardHeader class="pb-2 flex flex-row items-start justify-between">
       <div class="flex flex-col">
-        <CardTitle class="text-base font-normal text-[#a1a1aa]">Investment Allocation</CardTitle>
+        <CardTitle class="text-base font-normal text-muted-foreground">Investment Allocation</CardTitle>
         <div class="mt-1 flex items-baseline gap-2">
-           <span class="text-3xl font-bold text-white tracking-tight">${{ new Intl.NumberFormat('en-US').format(totalValue) }}</span>
+           <span class="text-3xl font-bold text-foreground tracking-tight">${{ new Intl.NumberFormat('en-US').format(totalValue) }}</span>
         </div>
-        <CardDescription class="text-[#6b7280]">Portfolio breakdown</CardDescription>
+        <CardDescription class="text-muted-foreground">Portfolio breakdown</CardDescription>
       </div>
-      <div v-if="isLoading" class="text-[#a1a1aa] animate-spin">
+      <div v-if="isLoading" class="text-muted-foreground animate-spin">
         <RefreshCw class="size-4" />
       </div>
       <div v-else-if="isError" class="text-destructive flex items-center">

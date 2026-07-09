@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { useRoute } from 'vue-router'
 import { onMounted, ref } from 'vue'
 import {
   LayoutDashboard,
@@ -14,8 +13,11 @@ import {
   LogOut,
   Camera,
   Menu,
-  HelpCircle
+  HelpCircle,
+  Sun,
+  Moon
 } from '@lucide/vue'
+import { useDark, useToggle } from '@vueuse/core'
 
 import { cn } from "@/lib/utils"
 import Logo from "@/components/Logo.vue"
@@ -31,12 +33,15 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { useUser } from '@/composables/useUser'
 import { useAuth } from '@/composables/useAuth'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 
 const route = useRoute()
 const router = useRouter()
 const { user, notifications, fetchNotifications } = useUser()
 const { logout } = useAuth()
+
+const isDark = useDark()
+const toggleDark = useToggle(isDark)
 
 onMounted(() => {
   fetchNotifications()
@@ -115,14 +120,20 @@ const isActive = (href: string) => route.path === href
           </div>
         </div>
         <div class="relative hidden flex-1 items-center md:flex lg:ml-0">
-          <Search class="pointer-events-none absolute left-3 size-4 text-muted-foreground" />
-          <input
-            type="search"
-            placeholder="Search transactions, accounts…"
-            class="h-10 w-full max-w-sm rounded-xl border border-input bg-card pl-9 pr-3 text-sm text-foreground outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring/40"
-          />
+          <!-- Search removed as requested -->
         </div>
         <div class="ml-auto flex items-center gap-1.5">
+          <Button
+            variant="ghost"
+            size="icon"
+            class="relative rounded-xl text-muted-foreground hover:text-foreground"
+            @click="toggleDark()"
+            aria-label="Toggle dark mode"
+          >
+            <Moon v-if="!isDark" class="size-5" />
+            <Sun v-else class="size-5" />
+          </Button>
+
           <DropdownMenu>
             <DropdownMenuTrigger as-child>
               <Button
