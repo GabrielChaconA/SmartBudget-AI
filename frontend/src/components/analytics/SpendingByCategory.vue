@@ -85,7 +85,7 @@ const chartOption = computed(() => ({
       data: chartData
     }
   ]
-})
+}))
 </script>
 
 <template>
