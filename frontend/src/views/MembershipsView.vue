@@ -13,6 +13,9 @@ import { useUser } from '@/composables/useUser'
 import { formatCurrency } from '@/lib/data'
 import AddSubscriptionModal from '@/components/AddSubscriptionModal.vue'
 import AssetLogo from '@/components/AssetLogo.vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 const { user } = useUser()
 const isAddModalOpen = ref(false)
@@ -67,15 +70,15 @@ const notifyCount = computed(() => active.value.filter((m: any) => m.notify).len
       <header class="pb-6 flex items-center justify-between">
         <div>
           <h1 class="text-2xl font-semibold tracking-tight text-foreground">
-            Active Memberships
+            {{ $t('memberships.title') }}
           </h1>
           <p class="mt-1 text-sm text-muted-foreground">
-            Manage your subscriptions and choose which ones send you payment reminders.
+            {{ $t('memberships.subtitle') }}
           </p>
         </div>
         <Button class="bg-green-600 hover:bg-green-700 text-white rounded-full p-3 sm:px-6 sm:py-2" @click="isAddModalOpen = true">
           <Plus class="size-8 sm:hidden" stroke-width="2.5" />
-          <span class="hidden sm:inline">Add Subscription</span>
+          <span class="hidden sm:inline">{{ $t('memberships.addMembership') }}</span>
         </Button>
       </header>
 

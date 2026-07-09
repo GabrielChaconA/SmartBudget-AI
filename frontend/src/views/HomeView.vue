@@ -10,9 +10,11 @@ import AddMoneyModal from '@/components/home/AddMoneyModal.vue'
 import { useUser } from '@/composables/useUser'
 import { Eye, EyeOff, Plus } from '@lucide/vue'
 import { Button } from '@/components/ui/button'
+import { useI18n } from 'vue-i18n'
 
 const { user, isBalancesVisible, toggleBalances } = useUser()
 const isAddMoneyModalOpen = ref(false)
+const { t } = useI18n()
 </script>
 
 <template>
@@ -28,8 +30,9 @@ const isAddMoneyModalOpen = ref(false)
           </p>
         </div>
         <div class="flex items-center gap-2">
-          <Button variant="outline" @click="isAddMoneyModalOpen = true" class="rounded-full shadow-sm">
-            <Plus class="mr-2 size-4" /> Transacción
+          <Button variant="outline" @click="isAddMoneyModalOpen = true" class="rounded-full shadow-sm w-11 p-0 sm:w-auto sm:px-4">
+            <Plus class="size-5 sm:mr-2 sm:size-4 shrink-0" />
+            <span class="hidden sm:inline">{{ $t('home.addTransaction') }}</span>
           </Button>
           <Button variant="ghost" size="icon" @click="toggleBalances" class="text-muted-foreground hover:text-foreground">
             <Eye v-if="isBalancesVisible" class="size-5" />
