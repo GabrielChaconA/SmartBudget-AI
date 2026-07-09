@@ -6,7 +6,8 @@ RUN apk add --no-cache \
     git \
     libpq-dev \
     postgresql-dev \
-    linux-headers
+    linux-headers \
+    ca-certificates
 
 # Install PHP extensions
 RUN docker-php-ext-install pdo pdo_pgsql pcntl sockets

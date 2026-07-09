@@ -25,24 +25,33 @@ class GoogleAuthController extends Controller
             // Check if the google_id column exists (migration might not have run)
             $hasGoogleId = Schema::hasColumn('users', 'google_id');
 
-            if ($hasGoogleId) {
-                $user = User::updateOrCreate(
-                    ['google_id' => $googleUser->id],
-                    [
-                        'name'   => $googleUser->name,
-                        'email'  => $googleUser->email,
-                        'avatar' => $googleUser->avatar,
-                    ]
-                );
+            // Find user by email first to avoid unique constraint violations
+            $user = User::where('email', $googleUser->email)->first();
+
+            if ($user) {
+                // Update existing user with Google info
+                $user->name = $googleUser->name;
+                if ($hasGoogleId) {
+                    $user->google_id = $googleUser->id;
+                }
+                if ($googleUser->avatar && Schema::hasColumn('users', 'avatar')) {
+                    $user->avatar = $googleUser->avatar;
+                }
+                $user->save();
             } else {
-                // Fallback: use email as lookup key if google_id column doesn't exist
-                $user = User::updateOrCreate(
-                    ['email' => $googleUser->email],
-                    [
-                        'name'   => $googleUser->name,
-                        'avatar' => $googleUser->avatar ?? null,
-                    ]
-                );
+                // Create new user
+                $userData = [
+                    'name' => $googleUser->name,
+                    'email' => $googleUser->email,
+                ];
+                if ($hasGoogleId) {
+                    $userData['google_id'] = $googleUser->id;
+                }
+                if ($googleUser->avatar && Schema::hasColumn('users', 'avatar')) {
+                    $userData['avatar'] = $googleUser->avatar;
+                }
+                
+                $user = User::create($userData);
             }
 
             // Create default settings if new user
