@@ -8,6 +8,47 @@ use App\Models\User;
 
 class AuthController extends Controller
 {
+    public function register(Request $request)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users',
+            'password' => 'required|confirmed|min:6',
+        ]);
+
+        $user = User::create([
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => \Illuminate\Support\Facades\Hash::make($request->password),
+        ]);
+
+        // Create default settings and account for new user
+        \Illuminate\Support\Facades\DB::table('settings')->insert([
+            'user_id' => $user->id,
+            'currency' => 'MXN',
+            'monthly_income' => 0,
+            'created_at' => now(),
+            'updated_at' => now()
+        ]);
+
+        \Illuminate\Support\Facades\DB::table('accounts')->insert([
+            'user_id' => $user->id,
+            'name' => 'Cartera',
+            'balance' => 0,
+            'created_at' => now(),
+            'updated_at' => now()
+        ]);
+
+        $token = $user->createToken('auth_token')->plainTextToken;
+
+        return response()->json([
+            'message' => 'Registered successfully',
+            'access_token' => $token,
+            'token_type' => 'Bearer',
+            'user' => $user
+        ]);
+    }
+
     public function login(Request $request)
     {
         $request->validate([

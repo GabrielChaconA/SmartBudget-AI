@@ -1,23 +1,66 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import { RouterLink, useRouter } from 'vue-router'
+import { ref, onMounted } from 'vue'
+import { RouterLink, useRouter, useRoute } from 'vue-router'
 import Logo from '@/components/Logo.vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useAuth } from '@/composables/useAuth'
 import { Loader2 } from '@lucide/vue'
 
-const email = ref('mariana.lopez@gmail.com')
-const password = ref('password')
-const { login, isLoading, error } = useAuth()
+const activeTab = ref('login')
+
+// Login refs
+const email = ref('')
+const password = ref('')
+
+// Register refs
+const regName = ref('')
+const regEmail = ref('')
+const regPassword = ref('')
+const regPasswordConfirm = ref('')
+
+const { login, register, isLoading, error } = useAuth()
 const router = useRouter()
+const route = useRoute()
+
+onMounted(() => {
+  // Ensure dark mode is applied if they want it black
+  document.documentElement.classList.add('dark')
+
+  if (route.query.token) {
+    const token = route.query.token as string;
+    localStorage.setItem('auth_token', token);
+    import('axios').then(({ default: axios }) => {
+      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      router.push('/');
+    });
+  } else if (route.query.error) {
+    error.value = 'Google Login failed. Please try again.';
+  }
+})
 
 const handleLogin = async () => {
   const success = await login(email.value, password.value)
   if (success) {
     router.push('/')
   }
+}
+
+const handleRegister = async () => {
+  if (regPassword.value !== regPasswordConfirm.value) {
+    error.value = "Passwords don't match";
+    return
+  }
+  if (register) {
+    const success = await register(regName.value, regEmail.value, regPassword.value)
+    if (success) router.push('/')
+  }
+}
+
+const handleGoogleLogin = () => {
+  window.location.href = 'http://localhost:8000/api/auth/google/redirect'
 }
 
 const GoogleIcon = {
@@ -33,104 +76,164 @@ const GoogleIcon = {
 </script>
 
 <template>
-  <main class="flex min-h-screen flex-col lg:flex-row">
-    <!-- Left: illustration panel (desktop) -->
-    <section class="relative hidden w-1/2 flex-col justify-between border-r border-border bg-card p-12 lg:flex overflow-hidden">
+  <main class="flex min-h-screen flex-col lg:flex-row dark bg-background text-foreground">
+    <!-- Left: illustration panel (desktop) with login.jpeg background -->
+    <section class="relative hidden w-1/2 lg:flex overflow-hidden bg-cover bg-center" style="background-image: url('/login.jpeg');">
+      <div class="absolute inset-0 bg-black/60"></div>
       
-      <div class="flex flex-1 items-center justify-center mb-12">
-        <div class="h-full w-full rounded-3xl bg-card border-4 border-green-500 shadow-[0_0_50px_rgba(34,197,94,0.6)] animate-pulse overflow-hidden p-8 flex items-center justify-center">
-          <img src="/smartbudget-logo.png" alt="SmartBudget Logo" class="h-full w-full object-contain" />
+      <div class="relative z-10 w-full h-full flex flex-col items-center justify-center p-12 text-white gap-8">
+        <h1 class="text-7xl font-extrabold tracking-tighter text-balance text-center drop-shadow-2xl">
+          SmartBudget <span class="text-primary">AI</span>
+        </h1>
+        
+        <div class="text-center w-full">
+          <h2 class="text-3xl font-semibold leading-snug tracking-tight text-balance">
+            Financial clarity, powered by intelligent insights.
+          </h2>
+          <p class="mt-3 text-lg leading-relaxed text-gray-200">
+            Track every account, forecast your future, and let AI guide you
+            toward your goals.
+          </p>
         </div>
-      </div>
-      
-      <div class="relative z-10 max-w-md">
-        <h2 class="text-2xl font-semibold leading-snug tracking-tight text-foreground text-balance">
-          Financial clarity, powered by intelligent insights.
-        </h2>
-        <p class="mt-3 text-sm leading-relaxed text-muted-foreground">
-          Track every account, forecast your future, and let AI guide you
-          toward your goals.
-        </p>
       </div>
     </section>
 
     <!-- Right: login form -->
-    <section class="flex flex-1 items-center justify-center px-6 py-12">
+    <section class="flex flex-1 items-center justify-center px-6 py-12 relative overflow-y-auto">
       <div class="w-full max-w-sm">
-        <div class="mb-8 flex flex-col items-center gap-6 text-center lg:items-start lg:text-left">
-          <div class="lg:hidden">
-            <Logo />
-          </div>
+        <div class="mb-8 flex flex-col items-center gap-6 text-center">
           <div>
             <h1 class="text-4xl font-bold tracking-tight text-foreground">
-              Welcome back
+              Welcome
             </h1>
             <p class="mt-2 text-sm text-muted-foreground">
-              Sign in to your SmartBudget AI account.
+              Sign in or create an account to continue.
             </p>
           </div>
         </div>
 
-        <form class="flex flex-col gap-6" @submit.prevent="handleLogin">
-          <div v-if="error" class="p-3 text-sm rounded-md bg-destructive/15 text-destructive border border-destructive/20">
-            {{ error }}
-          </div>
-          <div class="space-y-4">
-            <div class="space-y-2">
-              <Label for="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                v-model="email"
-                placeholder="you@example.com"
-                autocomplete="email"
-                required
-              />
-            </div>
-            <div class="space-y-2">
-              <div class="flex items-center justify-between">
-                <Label for="password">Password</Label>
-                <RouterLink
-                  to="#"
-                  class="text-xs font-medium text-primary hover:underline"
-                >
-                  Forgot password?
-                </RouterLink>
+        <!-- Added flex-col to force correct tab content layout -->
+        <Tabs v-model="activeTab" class="w-full flex-col">
+          <TabsList class="grid w-full grid-cols-2 mb-6">
+            <TabsTrigger value="login">Login</TabsTrigger>
+            <TabsTrigger value="register">Register</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="login">
+            <form class="flex flex-col gap-6" @submit.prevent="handleLogin">
+              <div v-if="error && activeTab === 'login'" class="p-3 text-sm rounded-md bg-destructive/15 text-destructive border border-destructive/20">
+                {{ error }}
               </div>
-              <Input
-                id="password"
-                type="password"
-                v-model="password"
-                placeholder="••••••••"
-                autocomplete="current-password"
-                required
-              />
-            </div>
-          </div>
+              <div class="space-y-4">
+                <div class="space-y-2 text-left">
+                  <Label for="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    v-model="email"
+                    placeholder="you@example.com"
+                    autocomplete="email"
+                    required
+                  />
+                </div>
+                <div class="space-y-2 text-left">
+                  <div class="flex items-center justify-between">
+                    <Label for="password">Password</Label>
+                    <RouterLink
+                      to="#"
+                      class="text-xs font-medium text-primary hover:underline"
+                    >
+                      Forgot password?
+                    </RouterLink>
+                  </div>
+                  <Input
+                    id="password"
+                    type="password"
+                    v-model="password"
+                    placeholder="••••••••"
+                    autocomplete="current-password"
+                    required
+                  />
+                </div>
+              </div>
 
-          <Button type="submit" size="lg" class="w-full" :disabled="isLoading">
-            <Loader2 v-if="isLoading" class="mr-2 h-4 w-4 animate-spin" />
-            Sign In
-          </Button>
+              <Button type="submit" size="lg" class="w-full" :disabled="isLoading">
+                <Loader2 v-if="isLoading" class="mr-2 h-4 w-4 animate-spin" />
+                Sign In
+              </Button>
+            </form>
+          </TabsContent>
 
+          <TabsContent value="register">
+            <form class="flex flex-col gap-6" @submit.prevent="handleRegister">
+              <div v-if="error && activeTab === 'register'" class="p-3 text-sm rounded-md bg-destructive/15 text-destructive border border-destructive/20">
+                {{ error }}
+              </div>
+              <div class="space-y-4">
+                <div class="space-y-2 text-left">
+                  <Label for="regName">Name</Label>
+                  <Input
+                    id="regName"
+                    type="text"
+                    v-model="regName"
+                    placeholder="John Doe"
+                    required
+                  />
+                </div>
+                <div class="space-y-2 text-left">
+                  <Label for="regEmail">Email</Label>
+                  <Input
+                    id="regEmail"
+                    type="email"
+                    v-model="regEmail"
+                    placeholder="you@example.com"
+                    autocomplete="email"
+                    required
+                  />
+                </div>
+                <div class="space-y-2 text-left">
+                  <Label for="regPassword">Password</Label>
+                  <Input
+                    id="regPassword"
+                    type="password"
+                    v-model="regPassword"
+                    placeholder="••••••••"
+                    required
+                  />
+                </div>
+                <div class="space-y-2 text-left">
+                  <Label for="regPasswordConfirm">Confirm Password</Label>
+                  <Input
+                    id="regPasswordConfirm"
+                    type="password"
+                    v-model="regPasswordConfirm"
+                    placeholder="••••••••"
+                    required
+                  />
+                </div>
+              </div>
+
+              <Button type="submit" size="lg" class="w-full" :disabled="isLoading">
+                <Loader2 v-if="isLoading" class="mr-2 h-4 w-4 animate-spin" />
+                Sign Up
+              </Button>
+            </form>
+          </TabsContent>
+        </Tabs>
+
+        <div class="mt-6 flex flex-col gap-6 w-full">
           <div class="flex items-center gap-3">
             <span class="h-px flex-1 bg-border" />
             <span class="text-xs text-muted-foreground">or</span>
             <span class="h-px flex-1 bg-border" />
           </div>
 
-          <Button variant="outline" size="lg" class="w-full">
+          <Button variant="outline" size="lg" class="w-full" @click="handleGoogleLogin">
             <GoogleIcon />
             Continue with Google
           </Button>
-        </form>
+        </div>
 
-        <p class="mt-8 text-center text-sm text-muted-foreground">
-          Don't have an account?
-          <RouterLink to="/" class="font-medium text-primary hover:underline">
-            Sign up
-          </RouterLink>
-        </p>
       </div>
     </section>
   </main>
