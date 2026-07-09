@@ -29,7 +29,7 @@ const isAddMoneyModalOpen = ref(false)
         </div>
         <div class="flex items-center gap-2">
           <Button variant="outline" @click="isAddMoneyModalOpen = true" class="rounded-full shadow-sm">
-            <Plus class="mr-2 size-4" /> Agregar Dinero
+            <Plus class="mr-2 size-4" /> Transacción
           </Button>
           <Button variant="ghost" size="icon" @click="toggleBalances" class="text-muted-foreground hover:text-foreground">
             <Eye v-if="isBalancesVisible" class="size-5" />

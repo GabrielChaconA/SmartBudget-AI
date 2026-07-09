@@ -7,7 +7,7 @@ import { GridComponent, TooltipComponent } from 'echarts/components'
 import VChart from 'vue-echarts'
 import { netWorthEvolution } from '@/lib/data'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { CHART_COLORS, commonTooltip, commonGrid, commonXAxis, commonYAxis, commonLineSeriesProps, getAreaGradient } from '@/lib/chartTheme'
+import { useChartTheme } from '@/lib/chartTheme'
 
 use([CanvasRenderer, LineChart, GridComponent, TooltipComponent])
 
@@ -55,13 +55,13 @@ const option = ref({
 </script>
 
 <template>
-  <Card class="border-border/50 bg-[#111111] flex flex-col rounded-[20px] shadow-none p-2 sm:p-4">
+  <Card class="border-border/50 bg-card flex flex-col rounded-[20px] shadow-none p-2 sm:p-4">
     <CardHeader class="pb-2">
-      <CardTitle class="text-base font-normal text-[#a1a1aa]">Net Worth Evolution</CardTitle>
+      <CardTitle class="text-base font-normal text-muted-foreground">Net Worth Evolution</CardTitle>
       <div class="mt-1 flex items-baseline gap-2">
-         <span class="text-3xl font-bold text-white tracking-tight">${{ new Intl.NumberFormat('en-US').format(currentNetWorth) }}</span>
+         <span class="text-3xl font-bold text-foreground tracking-tight">${{ new Intl.NumberFormat('en-US').format(currentNetWorth) }}</span>
       </div>
-      <CardDescription class="text-[#6b7280]">Last 9 months</CardDescription>
+      <CardDescription class="text-muted-foreground">Last 9 months</CardDescription>
     </CardHeader>
     <CardContent class="h-[300px] w-full p-0 mt-4">
       <VChart class="w-full h-full" :option="option" autoresize />

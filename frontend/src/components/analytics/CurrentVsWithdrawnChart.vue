@@ -11,7 +11,7 @@ import {
 import { CanvasRenderer } from 'echarts/renderers'
 import VChart from 'vue-echarts'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { CHART_COLORS, commonTooltip, commonGrid, getTranslucentStyle } from '@/lib/chartTheme'
+import { useChartTheme } from '@/lib/chartTheme'
 import { useUser } from '@/composables/useUser'
 import { exchangeRateService } from '@/services/exchangeRate'
 
@@ -83,6 +83,7 @@ const totalValueFormatted = computed(() => {
   }).format(currentMoney.value)
 })
 
+const { CHART_COLORS, commonTooltip, getTranslucentStyle } = useChartTheme()
 const chartOption = computed(() => {
   const dineroActual = currentMoney.value
   const dineroSacado = withdrawnMoney.value
@@ -137,15 +138,15 @@ const chartOption = computed(() => {
 </script>
 
 <template>
-  <Card class="border-border/50 bg-[#111111] flex flex-col rounded-[20px] shadow-none p-2 sm:p-4">
+  <Card class="border-border/50 bg-card flex flex-col rounded-[20px] shadow-none p-2 sm:p-4">
     <CardHeader class="pb-2">
       <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
         <div>
-          <CardTitle class="text-base font-normal text-[#a1a1aa]">Dinero Actual vs Sacado</CardTitle>
+          <CardTitle class="text-base font-normal text-muted-foreground">Dinero Actual vs Sacado</CardTitle>
           <div class="mt-1 flex items-baseline gap-2">
-            <span class="text-3xl font-bold text-white tracking-tight">{{ totalValueFormatted }}</span>
+            <span class="text-3xl font-bold text-foreground tracking-tight">{{ totalValueFormatted }}</span>
           </div>
-          <CardDescription class="text-[#6b7280]">Balance en cuenta vs Gastos/Retiros</CardDescription>
+          <CardDescription class="text-muted-foreground">Balance en cuenta vs Gastos/Retiros</CardDescription>
         </div>
         
         <div class="flex items-center gap-2 bg-black/40 p-1 rounded-lg border border-white/5">
@@ -164,10 +165,10 @@ const chartOption = computed(() => {
       </div>
     </CardHeader>
     <CardContent class="h-[300px] w-full p-0 mt-4 flex items-center justify-center">
-      <div v-if="isLoading" class="text-[#6b7280] text-sm animate-pulse">
+      <div v-if="isLoading" class="text-muted-foreground text-sm animate-pulse">
         Cargando datos...
       </div>
-      <div v-else-if="currentMoney === 0 && withdrawnMoney === 0" class="text-[#6b7280] text-sm">
+      <div v-else-if="currentMoney === 0 && withdrawnMoney === 0" class="text-muted-foreground text-sm">
         No hay datos suficientes
       </div>
       <VChart v-else :option="chartOption" autoresize class="w-full h-full" />

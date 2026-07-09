@@ -11,7 +11,7 @@ import {
 import { CanvasRenderer } from 'echarts/renderers'
 import VChart from 'vue-echarts'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { CHART_COLORS, commonTooltip, commonGrid, commonXAxis, commonYAxis } from '@/lib/chartTheme'
+import { useChartTheme } from '@/lib/chartTheme'
 
 echarts.use([
   TitleComponent,
@@ -28,7 +28,8 @@ const expenseData = [18000, 19000, 17500, 16000, 18500, 19000]
 const totalIncome = computed(() => incomeData.reduce((a, b) => a + b, 0))
 const totalExpense = computed(() => expenseData.reduce((a, b) => a + b, 0))
 
-const chartOption = ref({
+const { CHART_COLORS, commonTooltip, commonGrid, commonXAxis, commonYAxis } = useChartTheme()
+const chartOption = computed(() => ({
   backgroundColor: 'transparent',
   tooltip: {
     ...commonTooltip,
@@ -85,14 +86,14 @@ const chartOption = ref({
 </script>
 
 <template>
-  <Card class="border-border/50 bg-[#111111] flex flex-col rounded-[20px] shadow-none p-2 sm:p-4">
+  <Card class="border-border/50 bg-card flex flex-col rounded-[20px] shadow-none p-2 sm:p-4">
     <CardHeader class="pb-2">
-      <CardTitle class="text-base font-normal text-[#a1a1aa]">Income vs Expenses</CardTitle>
+      <CardTitle class="text-base font-normal text-muted-foreground">Income vs Expenses</CardTitle>
       <div class="mt-1 flex items-baseline gap-2">
-         <span class="text-3xl font-bold text-white tracking-tight">${{ new Intl.NumberFormat('en-US').format(totalIncome) }}</span>
-         <span class="text-sm font-medium text-[#6b7280]">vs ${{ new Intl.NumberFormat('en-US').format(totalExpense) }}</span>
+         <span class="text-3xl font-bold text-foreground tracking-tight">${{ new Intl.NumberFormat('en-US').format(totalIncome) }}</span>
+         <span class="text-sm font-medium text-muted-foreground">vs ${{ new Intl.NumberFormat('en-US').format(totalExpense) }}</span>
       </div>
-      <CardDescription class="text-[#6b7280]">Monthly comparison</CardDescription>
+      <CardDescription class="text-muted-foreground">Monthly comparison</CardDescription>
     </CardHeader>
     <CardContent class="h-[300px] w-full p-0 mt-4">
       <VChart class="w-full h-full" :option="chartOption" autoresize />

@@ -10,7 +10,7 @@ import {
 import { CanvasRenderer } from 'echarts/renderers'
 import VChart from 'vue-echarts'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { CHART_COLORS, getTranslucentStyle } from '@/lib/chartTheme'
+import { useChartTheme } from '@/lib/chartTheme'
 
 echarts.use([
   TitleComponent,
@@ -33,7 +33,8 @@ const chartData = rawData.sort((a, b) => b.value - a.value).map((item, idx) => (
 }))
 const totalSpending = chartData.reduce((acc, curr) => acc + curr.value, 0)
 
-const chartOption = ref({
+const { CHART_COLORS, getTranslucentStyle } = useChartTheme()
+const chartOption = computed(() => ({
   backgroundColor: 'transparent',
   tooltip: {
     backgroundColor: CHART_COLORS.tooltipBg,
@@ -88,13 +89,13 @@ const chartOption = ref({
 </script>
 
 <template>
-  <Card class="border-border/50 bg-[#111111] flex flex-col rounded-[20px] shadow-none p-2 sm:p-4">
+  <Card class="border-border/50 bg-card flex flex-col rounded-[20px] shadow-none p-2 sm:p-4">
     <CardHeader class="pb-2">
-      <CardTitle class="text-base font-normal text-[#a1a1aa]">Spending by Category</CardTitle>
+      <CardTitle class="text-base font-normal text-muted-foreground">Spending by Category</CardTitle>
       <div class="mt-1 flex items-baseline gap-2">
-         <span class="text-3xl font-bold text-white tracking-tight">${{ new Intl.NumberFormat('en-US').format(totalSpending) }}</span>
+         <span class="text-3xl font-bold text-foreground tracking-tight">${{ new Intl.NumberFormat('en-US').format(totalSpending) }}</span>
       </div>
-      <CardDescription class="text-[#6b7280]">Where your money went this month</CardDescription>
+      <CardDescription class="text-muted-foreground">Where your money went this month</CardDescription>
     </CardHeader>
     <CardContent class="h-[300px] w-full p-0 mt-4 flex items-center justify-center">
       <VChart class="w-full h-full" :option="chartOption" autoresize />

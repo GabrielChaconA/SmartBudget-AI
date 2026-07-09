@@ -1,16 +1,18 @@
 <script setup lang="ts">
 
-import { Pencil, Shield, LogOut, Target, Crown, Landmark, LineChart, Loader2 } from '@lucide/vue'
+import { Pencil, Shield, LogOut, ChevronRight, Moon, Sun, HelpCircle, ShieldCheck, Palette } from '@lucide/vue'
 import DashboardLayout from '@/components/DashboardLayout.vue'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { formatCurrency } from '@/lib/data'
 import { useUser } from '@/composables/useUser'
 import { useAuth } from '@/composables/useAuth'
+import { useDark, useToggle } from '@vueuse/core'
 import EditProfileModal from '@/components/EditProfileModal.vue'
 import AvatarCropModal from '@/components/AvatarCropModal.vue'
-import { ref, computed } from 'vue'
+import AboutModal from '@/components/profile/AboutModal.vue'
+import SecurityModal from '@/components/profile/SecurityModal.vue'
+import { ref } from 'vue'
 
 const { user, isLoading: isUserLoading, error: userError, uploadAvatar } = useUser()
 const { logout } = useAuth()
@@ -35,26 +37,11 @@ const handleCrop = async (blob: Blob) => {
   await uploadAvatar(croppedFile);
 }
 
-const goals = computed(() => {
-  if (!user.value?.goals) return []
-  return user.value.goals.map((g: any) => {
-    let current = 0;
-    if (g.target_amount > 0) {
-      current = Math.min(100, Math.round((g.current_amount / g.target_amount) * 100));
-    }
-    return { label: g.name, current }
-  })
-})
+const isAboutModalOpen = ref(false)
+const isSecurityModalOpen = ref(false)
 
-const linkedAccounts = computed(() => {
-  if (!user.value?.accounts) return []
-  return user.value.accounts.filter((a: any) => a.type !== 'investment')
-})
-
-const investmentAccounts = computed(() => {
-  if (!user.value?.accounts) return []
-  return user.value.accounts.filter((a: any) => a.type === 'investment')
-})
+const isDark = useDark()
+const toggleDark = useToggle(isDark)
 
 function getInitials(name: string) {
   if (!name) return '?'
@@ -115,116 +102,86 @@ function getInitials(name: string) {
           <div class="flex flex-wrap justify-center gap-3">
             <Button class="bg-green-600 hover:bg-green-700 text-white" @click="isEditModalOpen = true">
               <Pencil class="mr-2 h-4 w-4" />
-              Edit Profile
-            </Button>
-            <Button variant="outline">
-              <Shield class="mr-2 h-4 w-4" />
-              Privacy Settings
+              Editar Perfil
             </Button>
           </div>
         </CardContent>
       </Card>
 
-      <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <!-- Left column -->
-        <div class="flex flex-col gap-6 lg:col-span-2">
-          
-          <!-- Linked Accounts -->
-          <Card class="border-border">
-            <CardHeader class="flex flex-row items-center justify-between">
-              <div>
-                <CardTitle>Linked Accounts</CardTitle>
-                <CardDescription>Bank and card connections</CardDescription>
-              </div>
-              <Button variant="outline" size="sm">Manage Accounts</Button>
-            </CardHeader>
-            <CardContent class="flex flex-col gap-3">
-              <div v-for="a in linkedAccounts" :key="a.id" class="flex items-center justify-between gap-4 rounded-xl border border-border p-4">
-                <div class="flex items-center gap-3">
-                  <div class="flex size-10 items-center justify-center rounded-xl bg-accent text-accent-foreground">
-                    <Landmark class="size-5" />
-                  </div>
-                  <div>
-                    <p class="text-sm font-medium text-foreground">{{ a.name }}</p>
-                    <p class="text-xs text-muted-foreground capitalize">{{ a.type }}</p>
-                  </div>
+      <div class="w-full">
+        <Card class="border-border overflow-hidden">
+          <div class="flex flex-col">
+            <!-- Apariencia -->
+            <button 
+              class="flex items-center justify-between p-4 hover:bg-muted/50 transition-colors border-b border-border text-left outline-none"
+              @click="toggleDark()"
+            >
+              <div class="flex items-center gap-4">
+                <div class="flex size-10 items-center justify-center rounded-full bg-accent text-accent-foreground">
+                  <Palette class="size-5" />
                 </div>
-                <p :class="[
-                  'text-sm font-semibold tabular-nums',
-                  a.balance < 0 ? 'text-destructive' : 'text-foreground'
-                ]">
-                  {{ formatCurrency(a.balance, user?.currency || 'USD') }}
-                </p>
-              </div>
-              <p v-if="linkedAccounts.length === 0" class="text-sm text-muted-foreground py-4 text-center">No accounts linked yet.</p>
-            </CardContent>
-          </Card>
-
-          <!-- Investment Accounts -->
-          <Card class="border-border">
-            <CardHeader>
-              <CardTitle>Investment Accounts</CardTitle>
-              <CardDescription>Brokerage and crypto holdings</CardDescription>
-            </CardHeader>
-            <CardContent class="flex flex-col gap-3">
-              <div v-for="a in investmentAccounts" :key="a.id" class="flex items-center justify-between gap-4 rounded-xl border border-border p-4">
-                <div class="flex items-center gap-3">
-                  <div class="flex size-10 items-center justify-center rounded-xl bg-accent text-accent-foreground">
-                    <LineChart class="size-5" />
-                  </div>
-                  <div>
-                    <p class="text-sm font-medium text-foreground">{{ a.name }}</p>
-                    <p class="text-xs text-muted-foreground capitalize">{{ a.type }}</p>
-                  </div>
-                </div>
-                <p :class="[
-                  'text-sm font-semibold tabular-nums',
-                  a.balance < 0 ? 'text-destructive' : 'text-foreground'
-                ]">
-                  {{ formatCurrency(a.balance, user?.currency || 'USD') }}
-                </p>
-              </div>
-              <p v-if="investmentAccounts.length === 0" class="text-sm text-muted-foreground py-4 text-center">No investment accounts linked.</p>
-            </CardContent>
-          </Card>
-
-        </div>
-
-        <!-- Right column -->
-        <div class="flex flex-col gap-6">
-          <Card class="border-border">
-            <CardHeader>
-              <CardTitle>Financial Goals</CardTitle>
-              <CardDescription>Progress toward your targets</CardDescription>
-            </CardHeader>
-            <CardContent class="flex flex-col gap-5">
-              <div v-for="goal in goals" :key="goal.label" class="flex flex-col gap-2">
-                <div class="flex items-center justify-between text-sm">
-                  <span class="flex items-center gap-2 font-medium text-foreground">
-                    <Target class="size-4 text-primary" />
-                    {{ goal.label }}
-                  </span>
-                  <span class="text-muted-foreground">
-                    {{ goal.current }}%
-                  </span>
-                </div>
-                <div class="h-2.5 w-full overflow-hidden rounded-full bg-muted">
-                  <div
-                    class="h-full rounded-full bg-primary"
-                    :style="{ width: `${goal.current}%` }"
-                  />
+                <div>
+                  <h3 class="font-medium text-foreground">Apariencia</h3>
+                  <p class="text-xs text-muted-foreground">Cambiar modo claro / oscuro</p>
                 </div>
               </div>
-              <p v-if="goals.length === 0" class="text-sm text-muted-foreground py-2 text-center">No goals set up yet.</p>
-            </CardContent>
-          </Card>
+              <div class="flex items-center gap-2 text-muted-foreground">
+                <Moon v-if="isDark" class="size-5" />
+                <Sun v-else class="size-5" />
+              </div>
+            </button>
 
+            <!-- Acerca de -->
+            <button 
+              class="flex items-center justify-between p-4 hover:bg-muted/50 transition-colors border-b border-border text-left outline-none"
+              @click="isAboutModalOpen = true"
+            >
+              <div class="flex items-center gap-4">
+                <div class="flex size-10 items-center justify-center rounded-full bg-accent text-accent-foreground">
+                  <HelpCircle class="size-5" />
+                </div>
+                <div>
+                  <h3 class="font-medium text-foreground">Acerca de</h3>
+                  <p class="text-xs text-muted-foreground">Preguntas frecuentes y guía rápida</p>
+                </div>
+              </div>
+              <ChevronRight class="size-5 text-muted-foreground" />
+            </button>
 
-          <Button variant="outline" class="w-full" @click="logout">
-            <LogOut class="mr-2 h-4 w-4" />
-            Logout
-          </Button>
-        </div>
+            <!-- Seguridad -->
+            <button 
+              class="flex items-center justify-between p-4 hover:bg-muted/50 transition-colors border-b border-border text-left outline-none"
+              @click="isSecurityModalOpen = true"
+            >
+              <div class="flex items-center gap-4">
+                <div class="flex size-10 items-center justify-center rounded-full bg-accent text-accent-foreground">
+                  <ShieldCheck class="size-5" />
+                </div>
+                <div>
+                  <h3 class="font-medium text-foreground">Seguridad</h3>
+                  <p class="text-xs text-muted-foreground">Conoce cómo protegemos tus datos</p>
+                </div>
+              </div>
+              <ChevronRight class="size-5 text-muted-foreground" />
+            </button>
+
+            <!-- Cerrar Sesión -->
+            <button 
+              class="flex items-center justify-between p-4 hover:bg-destructive/10 transition-colors text-left outline-none"
+              @click="logout"
+            >
+              <div class="flex items-center gap-4">
+                <div class="flex size-10 items-center justify-center rounded-full bg-destructive/10 text-destructive">
+                  <LogOut class="size-5" />
+                </div>
+                <div>
+                  <h3 class="font-medium text-destructive">Cerrar Sesión</h3>
+                  <p class="text-xs text-muted-foreground">Salir de tu cuenta de forma segura</p>
+                </div>
+              </div>
+            </button>
+          </div>
+        </Card>
       </div>
     </div>
     <EditProfileModal v-model:open="isEditModalOpen" />
@@ -233,5 +190,7 @@ function getInitials(name: string) {
       :file="selectedFile" 
       @crop="handleCrop" 
     />
+    <AboutModal v-model:open="isAboutModalOpen" />
+    <SecurityModal v-model:open="isSecurityModalOpen" />
   </DashboardLayout>
 </template>

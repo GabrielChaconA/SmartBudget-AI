@@ -12,32 +12,63 @@ import { useUser } from '@/composables/useUser'
 
 const { user } = useUser()
 
+const computeNextDate = (dateStr: string, cycle: string) => {
+  if (!dateStr) return new Date()
+  
+  // Parse 'YYYY-MM-DD' or full string correctly in local time to avoid timezone offset
+  let date: Date;
+  if (dateStr.includes('-') && dateStr.length === 10) {
+    const [y, m, d] = dateStr.split('-')
+    date = new Date(Number(y), Number(m) - 1, Number(d))
+  } else {
+    date = new Date(dateStr)
+  }
+  
+  const now = new Date()
+  now.setHours(0,0,0,0)
+  
+  while (date < now) {
+    if (cycle === 'yearly') {
+      date.setFullYear(date.getFullYear() + 1)
+    } else {
+      date.setMonth(date.getMonth() + 1)
+    }
+  }
+  return date
+}
+
+const formatDate = (date: Date) => {
+  return date.toLocaleDateString('es-MX', { month: 'short', day: 'numeric' })
+}
+
 const upcomingPayments = computed(() => {
   if (!user.value?.subscriptions) return []
   
-  // Filtrar activos y ordenar por fecha de cobro más próxima
-  const active = user.value.subscriptions.filter((s: any) => s.status === 'active')
+  const active = user.value.subscriptions.filter((s: any) => s.status ? s.status === 'active' : true)
   
-  active.sort((a: any, b: any) => {
-    return new Date(a.next_billing_date).getTime() - new Date(b.next_billing_date).getTime()
+  const withRealDates = active.map((s: any) => {
+    const nextDate = computeNextDate(s.next_billing_date, s.billing_cycle)
+    return {
+      id: s.id,
+      name: s.name,
+      when: formatDate(nextDate),
+      timestamp: nextDate.getTime(),
+      category: s.category || 'Suscripción',
+      amount: parseFloat(s.amount)
+    }
   })
+  
+  withRealDates.sort((a: any, b: any) => a.timestamp - b.timestamp)
 
-  // Tomar solo los primeros 4
-  return active.slice(0, 4).map((s: any) => ({
-    id: s.id,
-    name: s.name,
-    when: s.next_billing_date,
-    category: s.category || 'Subscription',
-    amount: parseFloat(s.amount)
-  }))
+  return withRealDates.slice(0, 4)
 })
 </script>
 
 <template>
   <Card class="border-border">
     <CardHeader>
-      <CardTitle>Upcoming Payments</CardTitle>
-      <CardDescription>Scheduled over the next two weeks</CardDescription>
+      <CardTitle>Próximos Pagos</CardTitle>
+      <CardDescription>Suscripciones próximas a cobrar</CardDescription>
     </CardHeader>
     <CardContent>
       <ol class="relative flex flex-col">
@@ -61,7 +92,7 @@ const upcomingPayments = computed(() => {
           </div>
         </li>
       </ol>
-      <p v-if="upcomingPayments.length === 0" class="text-sm text-muted-foreground text-center py-4">No upcoming payments scheduled.</p>
+      <p v-if="upcomingPayments.length === 0" class="text-sm text-muted-foreground text-center py-4">No hay pagos programados.</p>
     </CardContent>
   </Card>
 </template>

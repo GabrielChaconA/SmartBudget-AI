@@ -88,7 +88,7 @@ import {
       </div>
 
       <div class="flex items-center gap-2">
-        <Button class="bg-[#16a34a] text-white hover:bg-[#15803d]">Apply</Button>
+        <Button class="bg-primary text-foreground hover:bg-primary/80">Apply</Button>
         <Button variant="ghost">Reset</Button>
       </div>
     </div>

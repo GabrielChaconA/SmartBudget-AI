@@ -8,7 +8,7 @@ import * as echarts from 'echarts/core'
 import { PieChart } from 'echarts/charts'
 import { TooltipComponent, LegendComponent } from 'echarts/components'
 import { CanvasRenderer } from 'echarts/renderers'
-import { CHART_COLORS, getTranslucentStyle } from '@/lib/chartTheme'
+import { useChartTheme } from '@/lib/chartTheme'
 import { exchangeRateService } from '@/services/exchangeRate'
 
 echarts.use([TooltipComponent, LegendComponent, PieChart, CanvasRenderer])
@@ -32,6 +32,7 @@ const toDisplayCurrency = (val: number, cur: string) => {
   return baseVal
 }
 
+const { CHART_COLORS, getTranslucentStyle } = useChartTheme()
 const chartOption = computed(() => {
   const free = toDisplayCurrency(freeMoney.value, user.value?.currency || 'MXN')
   const subs = toDisplayCurrency(totalSubscriptionsAmount.value, user.value?.currency || 'MXN')
@@ -112,16 +113,16 @@ const totalValueFormatted = computed(() => {
 </script>
 
 <template>
-  <Card class="border-border/50 bg-[#111111] flex flex-col rounded-[20px] shadow-none p-2 sm:p-4">
+  <Card class="border-border/50 bg-card flex flex-col rounded-[20px] shadow-none p-2 sm:p-4">
     <CardHeader class="pb-2">
-      <CardTitle class="text-base font-normal text-[#a1a1aa]">Distribución Global</CardTitle>
+      <CardTitle class="text-base font-normal text-muted-foreground">Distribución Global</CardTitle>
       <div class="mt-1 flex items-baseline gap-2">
-         <span class="text-3xl font-bold text-white tracking-tight">{{ totalValueFormatted }}</span>
+         <span class="text-3xl font-bold text-foreground tracking-tight">{{ totalValueFormatted }}</span>
       </div>
-      <CardDescription class="text-[#6b7280]">Dinero libre vs Suscripciones vs Inversiones</CardDescription>
+      <CardDescription class="text-muted-foreground">Dinero libre vs Suscripciones vs Inversiones</CardDescription>
     </CardHeader>
     <CardContent class="h-[300px] w-full p-0 mt-4 flex items-center justify-center">
-      <div v-if="freeMoney === 0 && totalSubscriptionsAmount === 0 && totalPortfolioValue === 0" class="text-[#6b7280] text-sm">
+      <div v-if="freeMoney === 0 && totalSubscriptionsAmount === 0 && totalPortfolioValue === 0" class="text-muted-foreground text-sm">
         No hay datos suficientes
       </div>
       <VChart v-else :option="chartOption" autoresize class="w-full h-full" />
