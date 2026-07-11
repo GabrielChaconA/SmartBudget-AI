@@ -1,69 +1,156 @@
 <div align="center">
-  <img src="frontend/public/smartbudget-logo.png" alt="SmartBudget Logo" width="300" />
+  <img src="https://via.placeholder.com/150x150.png?text=SmartBudget+Logo" alt="SmartBudget Logo" width="120" />
+  
+  # SmartBudget AI
+  
+  **La próxima generación de gestión patrimonial e inteligencia financiera personal.**
 
-  # SmartBudget-AI
-  
-  **AI-powered personal finance copilot** for budgeting, cash flow forecasting, expense analysis, OCR receipt processing, and smart financial insights.
-  
-  ---
+  [![Vue 3](https://img.shields.io/badge/Vue.js-3.x-4FC08D?style=for-the-badge&logo=vue.js)](https://vuejs.org/)
+  [![Laravel](https://img.shields.io/badge/Laravel-11.x-FF2D20?style=for-the-badge&logo=laravel)](https://laravel.com/)
+  [![TypeScript](https://img.shields.io/badge/TypeScript-Ready-3178C6?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org/)
+  [![TailwindCSS](https://img.shields.io/badge/Tailwind-CSS-38B2AC?style=for-the-badge&logo=tailwind-css)](https://tailwindcss.com/)
+  [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker)](https://www.docker.com/)
+
+  [Ver Demo en Vivo](https://smartbudget-app-sa92.onrender.com/login) • [Reportar un Bug]() • [Solicitar Funcionalidad]()
 </div>
 
-## Fase de Planeación: Arquitectura y Tecnologías
+---
 
-Este documento formaliza la fase de diseño y planeación arquitectónica del proyecto **SmartBudget**. Para garantizar un rendimiento óptimo, mantenibilidad y escalabilidad a futuro, la aplicación se ha dividido estructuralmente en dos repositorios principales (Frontend y Backend), orquestados mediante **Docker**.
+## Sobre el Proyecto
 
-### Arquitectura General
+**SmartBudget** nace de la necesidad de centralizar, automatizar y proyectar la salud financiera de individuos que manejan múltiples flujos de ingresos e inversiones diversificadas. 
 
-El sistema adopta un modelo de aplicación SPA (Single Page Application) completamente desacoplada, la cual consume una API RESTful.
-
-* **Frontend:** Responsable exclusivamente de la interfaz de usuario, enrutamiento del lado del cliente y visualización de gráficos interactivos.
-* **Backend:** Responsable de la gestión de la base de datos, lógica de negocio, autenticación, cálculos financieros y servicios de inteligencia artificial.
+Más allá de ser un simple rastreador de gastos, esta plataforma actúa como un **CFO Personal** que consolida cuentas líquidas, fondos de emergencia, pagos recurrentes (suscripciones) y portafolios de inversión (criptomonedas, bolsa de valores y activos alternativos) en un solo panel de control unificado, ofreciendo métricas en tiempo real de tu Patrimonio Neto (Net Worth).
 
 ---
 
-### Frontend (Interfaz de Usuario)
-Directorio: `/frontend`
+## Características Destacadas
 
-El cliente web ha sido construido bajo un ecosistema moderno orientado al alto rendimiento.
+### Gestión de Liquidez y Fondos (Smart Wallets)
+- **Cajas Personalizadas:** Clasifica tu liquidez en sub-fondos (Ahorros, Emergencias, Vacaciones).
+- **Asignación Granular:** Divide un fondo en presupuestos específicos mediante un sistema de etiquetas y colores intuitivo.
+- **Flujo de Caja Real:** Transacciones integradas que actualizan el patrimonio de manera inmediata.
 
-* **Framework Core:** [Vue 3](https://vuejs.org/) (Composition API).
-* **Lenguaje:** TypeScript para tipado estricto y seguridad en tiempo de compilación.
-* **Bundler & Build Tool:** [Vite](https://vitejs.dev/) (para un rendimiento óptimo en desarrollo).
-* **Enrutamiento:** Vue Router 4.
-* **Estilos y Componentes UI:** 
-  * [Tailwind CSS v3](https://tailwindcss.com/)
-  * [shadcn-vue](https://www.shadcn-vue.com/) (Componentes de interfaz de usuario accesibles y parametrizables).
-  * Diseño basado en una paleta de colores de alto contraste (Modo oscuro por defecto).
-* **Manejo del Estado:** [Pinia](https://pinia.vuejs.org/)
-* **Gráficos e Inteligencia de Negocios:** [Apache ECharts](https://echarts.apache.org/) (mediante `vue-echarts`) para el renderizado dinámico de métricas financieras.
-* **Iconografía:** Lucide Icons.
+### Hub de Inversiones en Tiempo Real
+- **Conectividad Multi-Mercado:** Integración viva con los principales exchanges y agregadores financieros.
+- **Portafolio Consolidado:** Rastrea acciones, ETFs, criptomonedas y apuestas deportivas.
+- **Análisis de Rendimiento (P&L):** Cálculo de rentabilidad algorítmica ponderada sobre el capital real invertido (ROI/ROE).
+- **Gráficos Dinámicos:** Integración nativa con `ECharts` para visualización de tendencias e históricos con suavizado de curvas.
 
----
+### Analítica y Smart Insights
+- **Net Worth Tracker:** Un panorama global y exacto de tus activos menos tus pasivos en cualquier divisa (Soporte Multi-moneda Automático USD/MXN).
+- **Tasas de Ahorro e Inteligencia:** Análisis de la relación ingreso/gasto y recomendaciones automáticas de distribución patrimonial.
 
-### Backend (API RESTful y Lógica de Negocio)
-Directorio: `/backend`
-
-La API y orquestación de datos utiliza el ecosistema de PHP moderno, enfocado en concurrencia y seguridad.
-
-* **Framework Core:** [Laravel 12](https://laravel.com/) (PHP 8.4).
-* **Autenticación SPA:** Laravel Sanctum (Sesiones basadas en cookies stateful para máxima seguridad de la aplicación cliente).
-* **Alto Rendimiento:** Laravel Octane (impulsado por RoadRunner o Swoole) para mantener la aplicación en memoria y lograr latencias mínimas.
-* **Base de Datos:** MySQL 8.x.
-* **Comunicación en Tiempo Real:** Laravel Reverb (Implementación de WebSockets para notificaciones y procesamiento de IA en tiempo real).
-* **Tareas en Segundo Plano:** Laravel Queues y Scheduler (Gestión asíncrona para OCR de recibos, generación de reportes y sincronización).
+### Seguridad y UX Premium
+- **Autenticación Delegada:** Inicio de sesión *frictionless* usando OAuth 2.0 (Google).
+- **Internacionalización Nativa (i18n):** Experiencia fluida tanto en Inglés como en Español.
+- **Dark/Light Mode:** Interfaz construida con `shadcn-vue` garantizando accesibilidad y un diseño de vanguardia.
 
 ---
 
-### Entorno de Desarrollo (Docker)
+## Arquitectura y Tecnologías
 
-El proyecto está diseñado para ser desplegado y ejecutado localmente sin necesidad de instalar dependencias globales a nivel de sistema operativo, gracias a la orquestación mediante Docker Compose.
+El sistema adopta una arquitectura orientada a servicios (SOA) separando la capa de presentación de la lógica de negocio y procesamiento de datos.
 
-* **Grupo Unificado (`smartbudget`)**: Todos los contenedores del ecosistema operan dentro de una misma red aislada, agrupados bajo el identificador `smartbudget`.
-* **Contenedor Frontend**: Servidor de desarrollo Vite expuesto en el puerto `5173`.
-* **Contenedores Backend (Sail)**: La API web, base de datos MySQL, y servicios de caché o colas (Redis), operando bajo la configuración predeterminada de Laravel Sail.
+### Frontend (SPA)
+*   **Core:** `Vue.js 3` (Composition API) + `Vite` + `TypeScript`
+*   **Estilos y UI:** `Tailwind CSS`, `shadcn-vue`, `Radix Vue`
+*   **Estado e Idioma:** `vue-router`, `vue-i18n`
+*   **Visualización de Datos:** `ECharts` (`vue-echarts`)
+
+### Backend (API REST)
+*   **Core:** `PHP 8.2` + `Laravel 11`
+*   **Base de Datos:** `MySQL 8.0` / `PostgreSQL`
+*   **Autenticación:** `Laravel Sanctum` + `Socialite` (JWT/Cookies SPA)
+
+### Integraciones de Datos (Orquestación de APIs)
+*   `Binance API` & `CoinGecko` para cotizaciones criptográficas de alta frecuencia.
+*   `Finnhub` para telemetría del mercado bursátil tradicional.
+*   `OddsAPI` para retornos de capital en apuestas deportivas.
+*   `ExchangeRate-API` para coberturas y conversión de divisas en tiempo real.
+
+---
+
+## Capturas de Pantalla
+
+<div align="center">
+  <img src="./img/home.png" alt="Dashboard Principal" width="48%" />
+  <img src="./img/analisis.png" alt="Análisis Avanzado" width="48%" />
+  <br><br>
+  <img src="./img/inversiones.png" alt="Panel de Inversiones" width="48%" />
+  <img src="./img/top%20de%20inversiones.png" alt="Top de Inversiones" width="48%" />
+  <br><br>
+  <img src="./img/found.png" alt="Gestión de Fondos" width="48%" />
+  <img src="./img/subs.png" alt="Control de Suscripciones" width="48%" />
+  <br><br>
+  <img src="./img/perfil.png" alt="Perfil y Preferencias" width="48%" />
+  <img src="./img/login.png" alt="Inicio de Sesión" width="48%" />
+</div>
+
+---
+
+## Instalación y Despliegue Local
+
+Sigue estos pasos para desplegar el entorno de desarrollo local.
+
+### Prerrequisitos
+- Docker & Docker Compose
+- Node.js (v18+)
+- Composer / PHP 8.2+ (Si no se usa Sail/Docker)
+
+### Configuración del Backend
+```bash
+git clone https://github.com/GabrielChaconA/SmartBudget-AI.git
+cd SmartBudget-AI/backend
+
+# Copiar configuración
+cp .env.example .env
+
+# Instalar dependencias de Laravel
+composer install
+
+# Generar llave de aplicación
+php artisan key:generate
+
+# Levantar contenedores Docker (Base de datos + App)
+./vendor/bin/sail up -d
+
+# Ejecutar migraciones y seeders
+./vendor/bin/sail artisan migrate --seed
+```
+
+### Configuración del Frontend
+```bash
+cd ../frontend
+
+# Instalar dependencias
+npm install
+
+# Iniciar servidor Vite (HMR)
+npm run dev
+```
+
+---
+
+## Infraestructura en la Nube (Deployment)
+Este proyecto está preparado bajo los principios de *Infrastructure as Code (IaC)* mediante el archivo `render.yaml`. 
+El backend corre encapsulado en un contenedor Docker con Nginx y PHP-FPM, mientras que el frontend se distribuye a través de un CDN como un sitio web estático ultra rápido.
+
+> **⚠️ Nota Importante sobre la Demo:** La aplicación está desplegada actualmente utilizando el nivel gratuito (Free Tier) de Render. Debido a esto, la primera vez que intentes acceder (o si la app no ha recibido tráfico en un rato), los servidores pueden tardar **entre 30 y 60 segundos en "despertar"** y cargar completamente. ¡Gracias por tu paciencia!
+
+---
+
+## Autor
+
+**Gabriel Chacón A.**  
+Full Stack Developer / Software Engineer
+
+*   **LinkedIn:** [linkedin.com/in/tu-perfil](https://www.linkedin.com/)
+*   **GitHub:** [@GabrielChaconA](https://github.com/GabrielChaconA)
+*   **Portafolio:** [tu-sitio-web.com](https://tu-sitio-web.com)
 
 ---
 
 <div align="center">
-  <i>Documento redactado durante la conclusión de la Fase de Planeación arquitectónica.</i>
+  <i>Si este proyecto te ha parecido interesante, considera dejar una estrella en el repositorio.</i>
 </div>
