@@ -1,7 +1,6 @@
 <div align="center">
-  <img src="./frontend/public/smartbudget-logo.png" alt="SmartBudget Logo" width="120" />
+  <img src="./frontend/public/smartbudget-logo.png" alt="SmartBudget Logo" width="550" />
   
-  # SmartBudget AI
   
   **La próxima generación de gestión patrimonial e inteligencia financiera personal.**
 
