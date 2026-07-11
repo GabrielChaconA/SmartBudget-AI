@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="https://via.placeholder.com/150x150.png?text=SmartBudget+Logo" alt="SmartBudget Logo" width="120" />
+  <img src="./frontend/public/smartbudget-logo.png" alt="SmartBudget Logo" width="120" />
   
   # SmartBudget AI
   
