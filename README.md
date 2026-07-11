@@ -10,7 +10,7 @@
   [![TailwindCSS](https://img.shields.io/badge/Tailwind-CSS-38B2AC?style=for-the-badge&logo=tailwind-css)](https://tailwindcss.com/)
   [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker)](https://www.docker.com/)
 
-  [Ver Demo en Vivo](https://smartbudget-app-sa92.onrender.com/login) • [Reportar un Bug]() • [Solicitar Funcionalidad]()
+
 </div>
 
 ---
