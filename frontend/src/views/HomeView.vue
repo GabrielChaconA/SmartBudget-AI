@@ -21,13 +21,15 @@ const { t } = useI18n()
   <DashboardLayout>
     <div class="mx-auto flex max-w-6xl flex-col gap-6">
       <div class="flex items-center justify-between">
-        <div>
-          <h1 class="text-2xl font-semibold tracking-tight text-foreground">
-            Good morning, {{ user?.name ? user.name.split(" ")[0] : 'Guest' }}
-          </h1>
-          <p class="mt-1 text-sm text-muted-foreground">
-            Here's a clear look at your finances today.
-          </p>
+        <div class="flex items-center gap-4">
+          <div>
+            <h1 class="text-2xl font-semibold tracking-tight text-foreground">
+              {{ $t('home.greeting') }}, {{ user?.name ? user.name.split(" ")[0] : $t('home.greetingGuest') }}
+            </h1>
+            <p class="mt-1 text-sm text-muted-foreground">
+              {{ $t('home.subtitle') }}
+            </p>
+          </div>
         </div>
         <div class="flex items-center gap-2">
           <Button variant="outline" @click="isAddMoneyModalOpen = true" class="rounded-full shadow-sm w-11 p-0 sm:w-auto sm:px-4">

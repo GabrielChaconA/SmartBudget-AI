@@ -73,6 +73,7 @@ export default {
     noInvestments: 'Sin inversiones todavía.',
     noInvestmentsHint: 'Empieza a rastrear tu portafolio.',
     portfolio: 'Portafolio',
+    portfolioBreakdown: 'Desglose del portafolio.',
     totalValue: 'Valor Total',
     totalReturn: 'Rendimiento Total',
     asset: 'Activo',
@@ -89,6 +90,7 @@ export default {
     purchasePrice: 'Precio de Compra',
     save: 'Guardar',
     cancel: 'Cancelar',
+    lastUpdate: 'Última actualización:',
   },
 
   memberships: {
@@ -184,6 +186,12 @@ export default {
     name: 'Nombre',
     description: 'Descripción',
     noData: 'Sin datos para mostrar.',
+    seeAll: 'Ver todos',
+    manage: 'Administrar',
+    summary: 'Resumen',
+    total: 'Total',
+    refresh: 'Actualizar',
+    today: 'hoy',
   },
 
   login: {

@@ -160,7 +160,7 @@ const chartOption = computed(() => ({
       <div class="z-10 relative whitespace-nowrap">
         <div class="flex items-center gap-3">
           <p class="text-sm font-medium text-primary-foreground/80">
-            Total Net Worth
+            {{ $t('netWorth.title') }}
           </p>
           <button 
             @click.stop="toggleItemVisibility('networth')" 
@@ -189,7 +189,7 @@ const chartOption = computed(() => ({
           </Badge>
           <span class="text-sm text-primary-foreground/80">
             <span v-if="isItemVisible('networth')">{{ isPositive ? '+' : '' }}{{ formatCurrency(changeAmount, displayCurrency) }}</span>
-            <span v-else>••••</span> today
+            <span v-else>••••</span> {{ $t('common.today') }}
           </span>
         </div>
       </div>

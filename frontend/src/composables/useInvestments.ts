@@ -144,21 +144,24 @@ const fetchData = async (user: any) => {
             const currentValueInUserCurrency = userCurrency === 'MXN'
               ? currentValueUsd * (exchangeRate.value || 20)
               : currentValueUsd
-            const originalValueUsd = h.quantity * (h.average_price || priceUsd)
-            const historicalReturn = h.average_price
-              ? ((priceUsd - h.average_price) / h.average_price) * 100
-              : 0
+              const historicalReturn = (h.average_price && h.average_price > 0)
+                ? ((priceUsd - h.average_price) / h.average_price) * 100
+                : 0;
+
+            const originalValueNative = h.quantity * (h.average_price || priceUsd);
+            const currentValueNative = h.quantity * priceUsd;
+
             return {
               id: h.id,
               name: h.symbol,
               ticker: h.symbol,
               value: currentValueInUserCurrency,
-              originalValue: currentValueUsd,
+              originalValue: currentValueUsd, // We keep the USD original value for reference
               originalCurrency: 'USD',
               created_at: h.created_at,
               returnPercent: historicalReturn,
               dayPercent: market.price_change_percentage_24h || 0,
-              totalInvestedNative: originalValueUsd
+              totalInvestedNative: originalValueNative // Important for calculating the actual return amount correctly
             }
           }
           return processHolding(h, 0)
@@ -186,9 +189,12 @@ const fetchData = async (user: any) => {
           : newHoldings[cat.id] || []
 
         const totalValue = catHoldings.reduce((sum, h) => sum + h.value, 0)
-        const avgReturn = catHoldings.length > 0
-          ? catHoldings.reduce((sum, h) => sum + h.returnPercent, 0) / catHoldings.length
-          : 0
+        const totalInvested = catHoldings.reduce((sum, h) => sum + h.originalValue, 0)
+        
+        let avgReturn = 0;
+        if (totalInvested > 0) {
+          avgReturn = ((totalValue - totalInvested) / totalInvested) * 100;
+        }
 
         return {
           ...cat,

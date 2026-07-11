@@ -30,9 +30,9 @@ const openFundDetails = (fund: any) => {
 <template>
   <div class="flex flex-col gap-4">
     <div class="flex items-center justify-between">
-      <h2 class="text-lg font-semibold tracking-tight text-foreground">Your Funds</h2>
+      <h2 class="text-lg font-semibold tracking-tight text-foreground">{{ $t('funds.title') }}</h2>
       <RouterLink to="/funds" class="text-sm font-medium text-primary hover:underline">
-        See all
+        {{ $t('common.seeAll') }}
       </RouterLink>
     </div>
     
@@ -74,7 +74,7 @@ const openFundDetails = (fund: any) => {
           <div class="flex size-10 items-center justify-center rounded-xl bg-accent mb-3 text-muted-foreground">
             <Plus class="size-5" />
           </div>
-          <p class="text-sm font-medium text-muted-foreground">New Fund</p>
+          <p class="text-sm font-medium text-muted-foreground">{{ $t('funds.newFund') }}</p>
         </CardContent>
       </Card>
     </div>
@@ -84,13 +84,13 @@ const openFundDetails = (fund: any) => {
         <div class="flex size-12 items-center justify-center rounded-full bg-accent mb-4">
           <Wallet class="size-6 text-muted-foreground" />
         </div>
-        <h3 class="text-lg font-medium text-foreground">No funds created yet</h3>
+        <h3 class="text-lg font-medium text-foreground">{{ $t('funds.noFunds') }}</h3>
         <p class="mt-2 text-sm text-muted-foreground max-w-sm mb-4">
-          Create pockets of money to organize your finances.
+          {{ $t('funds.noFundsHint') }}
         </p>
         <Button variant="outline" @click="isCreateModalOpen = true">
           <Plus class="size-4 mr-2" />
-          Create Fund
+          {{ $t('funds.addFund') }}
         </Button>
       </CardContent>
     </Card>

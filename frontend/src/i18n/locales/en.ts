@@ -73,6 +73,7 @@ export default {
     noInvestments: 'No investments yet.',
     noInvestmentsHint: 'Start tracking your portfolio.',
     portfolio: 'Portfolio',
+    portfolioBreakdown: 'Portfolio breakdown.',
     totalValue: 'Total Value',
     totalReturn: 'Total Return',
     asset: 'Asset',
@@ -89,6 +90,7 @@ export default {
     purchasePrice: 'Purchase Price',
     save: 'Save',
     cancel: 'Cancel',
+    lastUpdate: 'Last update:',
   },
 
   memberships: {
@@ -184,6 +186,12 @@ export default {
     name: 'Name',
     description: 'Description',
     noData: 'No data to display.',
+    seeAll: 'See all',
+    manage: 'Manage',
+    summary: 'Summary',
+    total: 'Total',
+    refresh: 'Refresh',
+    today: 'today',
   },
 
   login: {
