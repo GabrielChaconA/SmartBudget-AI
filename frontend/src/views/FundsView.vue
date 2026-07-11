@@ -9,7 +9,9 @@ import { formatCurrency } from '@/lib/data'
 import { useUser } from '@/composables/useUser'
 import CreateFundModal from '@/components/home/CreateFundModal.vue'
 import FundDetailsModal from '@/components/home/FundDetailsModal.vue'
+import { useI18n } from 'vue-i18n'
 
+const { t } = useI18n()
 const { user } = useUser()
 const searchQuery = ref('')
 const isCreateModalOpen = ref(false)
@@ -35,15 +37,15 @@ const filteredFunds = computed(() => {
       <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 class="text-2xl font-semibold tracking-tight text-foreground">
-            Funds
+            {{ $t('funds.title') }}
           </h1>
           <p class="mt-1 text-sm text-muted-foreground">
-            Manage your money pockets and allocations.
+            {{ $t('funds.subtitle') }}
           </p>
         </div>
         <div class="relative w-full sm:w-64">
           <Search class="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-          <Input v-model="searchQuery" placeholder="Search by name..." class="pl-9" />
+          <Input v-model="searchQuery" :placeholder="$t('funds.title') + '...'" class="pl-9" />
         </div>
       </div>
 
@@ -54,7 +56,7 @@ const filteredFunds = computed(() => {
             <div class="flex size-10 items-center justify-center rounded-xl bg-accent mb-3 text-muted-foreground">
               <Plus class="size-5" />
             </div>
-            <p class="text-sm font-medium text-muted-foreground">New Fund</p>
+            <p class="text-sm font-medium text-muted-foreground">{{ $t('funds.newFund') }}</p>
           </CardContent>
         </Card>
 

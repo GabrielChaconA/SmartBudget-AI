@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, computed } from 'vue'
 import {
   LayoutDashboard,
   ChartColumnIncreasing,
@@ -18,6 +18,7 @@ import {
   Moon
 } from '@lucide/vue'
 import { useDark, useToggle } from '@vueuse/core'
+import { useI18n } from 'vue-i18n'
 
 import { cn } from "@/lib/utils"
 import Logo from "@/components/Logo.vue"
@@ -40,6 +41,7 @@ const route = useRoute()
 const router = useRouter()
 const { user, notifications, fetchNotifications } = useUser()
 const { logout } = useAuth()
+const { t } = useI18n()
 
 const isDark = useDark()
 const toggleDark = useToggle(isDark)
@@ -50,13 +52,13 @@ onMounted(() => {
 
 const isSidebarOpen = ref(true)
 
-const navItems = [
-  { href: "/", label: "Home", short: "Home", icon: LayoutDashboard },
-  { href: "/analytics", label: "Analytics", short: "Stats", icon: ChartColumnIncreasing },
-  { href: "/investments", label: "Investments", short: "Invest", icon: TrendingUp },
-  { href: "/memberships", label: "Memberships", short: "Subs", icon: CreditCard },
-  { href: "/profile", label: "Profile", short: "Profile", icon: User },
-]
+const navItems = computed(() => [
+  { href: "/", label: t('nav.home'), short: t('nav.home'), icon: LayoutDashboard },
+  { href: "/analytics", label: t('nav.analytics'), short: t('nav.analytics'), icon: ChartColumnIncreasing },
+  { href: "/investments", label: t('nav.investments'), short: t('nav.investments'), icon: TrendingUp },
+  { href: "/memberships", label: t('nav.memberships'), short: t('nav.memberships'), icon: CreditCard },
+  { href: "/profile", label: t('nav.profile'), short: t('nav.profile'), icon: User },
+])
 
 const isActive = (href: string) => route.path === href
 </script>
@@ -106,7 +108,7 @@ const isActive = (href: string) => route.path === href
           )"
         >
           <HelpCircle class="size-5 shrink-0" aria-hidden="true" />
-          <span v-if="isSidebarOpen">Dudas</span>
+          <span v-if="isSidebarOpen">{{ $t('nav.support') }}</span>
         </RouterLink>
       </div>
     </aside>
@@ -147,10 +149,10 @@ const isActive = (href: string) => route.path === href
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" class="w-80">
-              <DropdownMenuLabel>Notificaciones</DropdownMenuLabel>
+              <DropdownMenuLabel>{{ $t('header.notifications') }}</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <div v-if="notifications.length === 0" class="p-4 text-center text-sm text-muted-foreground">
-                No tienes notificaciones recientes.
+                {{ $t('header.noNotifications') }}
               </div>
               <div v-else class="max-h-[300px] overflow-y-auto">
                 <DropdownMenuItem v-for="notif in notifications" :key="notif.id" class="flex flex-col items-start p-3">
@@ -177,20 +179,20 @@ const isActive = (href: string) => route.path === href
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" class="w-56">
-              <DropdownMenuLabel>My Account</DropdownMenuLabel>
+              <DropdownMenuLabel>{{ $t('header.myAccount') }}</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem @click="router.push('/profile')" class="cursor-pointer">
                 <User class="mr-2 size-4" />
-                <span>Profile</span>
+                <span>{{ $t('nav.profile') }}</span>
               </DropdownMenuItem>
               <DropdownMenuItem class="cursor-pointer">
                 <Settings class="mr-2 size-4" />
-                <span>Settings</span>
+                <span>{{ $t('header.settings') }}</span>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem @click="logout" class="cursor-pointer text-destructive focus:text-destructive">
                 <LogOut class="mr-2 size-4" />
-                <span>Log out</span>
+                <span>{{ $t('header.logOut') }}</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

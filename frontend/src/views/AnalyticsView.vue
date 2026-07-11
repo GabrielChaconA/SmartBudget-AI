@@ -7,6 +7,9 @@ import FundsVsFreeAllocation from '@/components/analytics/FundsVsFreeAllocation.
 import InvestmentPerformanceChart from '@/components/analytics/InvestmentPerformanceChart.vue'
 import MonthlySubscriptionsChart from '@/components/analytics/MonthlySubscriptionsChart.vue'
 import { useUser } from '@/composables/useUser'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 const { user } = useUser()
 
@@ -28,10 +31,10 @@ const toggleCurrency = () => {
       <div class="flex items-center justify-between">
         <div>
           <h1 class="text-2xl font-semibold tracking-tight text-foreground">
-            Analytics
+            {{ $t('analytics.title') }}
           </h1>
           <p class="mt-1 text-sm text-muted-foreground">
-            A complete business-intelligence view of your finances.
+            {{ $t('analytics.subtitle') }}
           </p>
         </div>
         

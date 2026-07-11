@@ -21,6 +21,11 @@ const getDisplayValue = (val: number) => {
   return val
 }
 
+const getReturnAmount = (value: number, returnPercent: number) => {
+  if (!value || !returnPercent) return 0
+  return value - (value / (1 + returnPercent / 100))
+}
+
 const categoryIcons: Record<string, any> = {
   etfs: Layers,
   stocks: Building2,
@@ -37,9 +42,9 @@ const visibleCategories = computed(() =>
 <template>
   <div class="flex flex-col gap-4">
     <div class="flex items-center justify-between">
-      <h2 class="text-lg font-semibold tracking-tight text-foreground">Investments</h2>
+      <h2 class="text-lg font-semibold tracking-tight text-foreground">{{ $t('investments.title') }}</h2>
       <RouterLink to="/investments" class="text-sm font-medium text-primary hover:underline">
-        Manage
+        {{ $t('common.manage') }}
       </RouterLink>
     </div>
 
@@ -47,14 +52,14 @@ const visibleCategories = computed(() =>
       <CardHeader>
         <div class="flex items-center justify-between">
           <CardTitle class="text-base flex items-center gap-2">
-            Summary
+            {{ $t('common.summary') }}
             <Button variant="ghost" size="icon" @click.stop="toggleItemVisibility('invest_summary')" class="h-6 w-6 text-muted-foreground hover:text-foreground">
               <Eye v-if="isItemVisible('invest_summary')" class="size-3" />
               <EyeOff v-else class="size-3" />
             </Button>
           </CardTitle>
         </div>
-        <CardDescription>Portfolio breakdown.</CardDescription>
+        <CardDescription>{{ $t('investments.portfolioBreakdown') }}</CardDescription>
       </CardHeader>
       <CardContent class="flex flex-col gap-3">
         <template v-if="visibleCategories.length > 0">
@@ -63,21 +68,30 @@ const visibleCategories = computed(() =>
               <component :is="categoryIcons[cat.id]" class="size-4" />
               {{ cat.label }}
             </span>
-            <span class="font-semibold tabular-nums text-foreground">
-              <span v-if="isItemVisible('invest_summary')">{{ formatCurrency(getDisplayValue(cat.value), displayCurrency) }}</span>
-              <span v-else>••••••</span>
-            </span>
+            <div class="flex flex-col items-end">
+              <span class="font-semibold tabular-nums text-foreground">
+                <span v-if="isItemVisible('invest_summary')">{{ formatCurrency(getDisplayValue(cat.value), displayCurrency) }}</span>
+                <span v-else>••••••</span>
+              </span>
+              <span v-if="isItemVisible('invest_summary') && cat.returnPercent" :class="[
+                'text-[10px] sm:text-xs font-medium tabular-nums flex items-center mt-0.5',
+                cat.returnPercent >= 0 ? 'text-primary' : 'text-destructive'
+              ]">
+                {{ cat.returnPercent > 0 ? '+' : '' }}{{ cat.returnPercent.toFixed(1) }}%
+                <span class="ml-1 opacity-80 font-normal">({{ cat.returnPercent > 0 ? '+' : '' }}{{ formatCurrency(getDisplayValue(getReturnAmount(cat.value, cat.returnPercent)), displayCurrency) }})</span>
+              </span>
+            </div>
           </div>
         </template>
 
         <div v-else class="text-sm text-muted-foreground text-center py-2">
-          No active investments
+          {{ $t('investments.noInvestments') }}
         </div>
 
         <div class="h-px w-full bg-border my-1"></div>
 
         <div class="flex items-center justify-between">
-          <span class="text-sm font-medium text-foreground">Total</span>
+          <span class="text-sm font-medium text-foreground">{{ $t('common.total') }}</span>
           <span class="font-bold tabular-nums text-primary">
             <span v-if="isItemVisible('invest_summary')">
               {{ formatCurrency(getDisplayValue(totalPortfolioValue), displayCurrency) }}

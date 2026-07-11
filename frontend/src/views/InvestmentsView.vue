@@ -13,6 +13,9 @@ import AssetLogo from '@/components/AssetLogo.vue'
 import AddInvestmentModal from '@/components/AddInvestmentModal.vue'
 import EditInvestmentModal from '@/components/EditInvestmentModal.vue'
 import InvestmentAlertModal from '@/components/InvestmentAlertModal.vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 import { use } from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
 import { LineChart } from 'echarts/charts'
@@ -81,6 +84,15 @@ const getDisplayValue = (val: number) => {
   if (userCurrency === 'MXN' && displayCurrency.value === 'USD') return val / exchangeRate.value;
   if (userCurrency === 'USD' && displayCurrency.value === 'MXN') return val * exchangeRate.value;
   return val;
+}
+
+const getReturnAmount = (value: number, returnPercent: number) => {
+  if (!value || !returnPercent) return 0;
+  // If returnPercent is e.g. 50%, the current value is 150% of the original.
+  // Original = Value / (1 + ReturnPercent/100)
+  // ReturnAmount = Value - Original
+  const original = value / (1 + returnPercent / 100);
+  return value - original;
 }
 
 const fetchData = () => _fetchData(user.value)
@@ -186,33 +198,37 @@ const chartOption = computed(() => ({
       <header class="pb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 class="text-2xl font-semibold tracking-tight text-foreground">
-            Investments
+            {{ $t('investments.title') }}
           </h1>
           <p class="mt-1 text-sm text-muted-foreground">
-            Track the performance of your ETFs, companies, crypto and relevant bets.
+            {{ $t('investments.subtitle') }}
           </p>
         </div>
         <div class="flex flex-col items-end gap-2">
-          <div class="flex items-center gap-3">
+          <div class="flex items-center justify-end gap-4">
             <span v-if="lastUpdate" class="text-xs text-muted-foreground">
-              Última actualización: {{ lastUpdate.toLocaleTimeString() }}
+              {{ $t('investments.lastUpdate') }} {{ lastUpdate.toLocaleTimeString() }}
             </span>
             <button 
               @click="toggleCurrency"
-              class="flex items-center justify-center gap-1 rounded-full bg-primary/10 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-primary transition-colors hover:bg-primary/20"
+              class="flex items-center justify-center gap-1.5 rounded-full bg-primary/20 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-primary transition-colors hover:bg-primary/30"
             >
-              <RefreshCw class="size-3" />
-              {{ displayCurrency }}
+              <RefreshCw class="size-3.5" />
+              <span>{{ displayCurrency }}</span>
             </button>
-            <Button variant="outline" size="sm" @click="fetchData" :disabled="isLoading">
-              <RefreshCw class="size-4 mr-2" :class="{ 'animate-spin': isLoading }" />
-              Actualizar
-            </Button>
+            <button 
+              @click="fetchData" 
+              :disabled="isLoading"
+              class="flex items-center justify-center gap-2 rounded-md border border-border px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-accent hover:text-accent-foreground disabled:opacity-50"
+            >
+              <RefreshCw class="size-3.5" :class="{ 'animate-spin': isLoading }" />
+              <span>{{ $t('common.refresh') }}</span>
+            </button>
           </div>
-          <span v-if="isError" class="text-xs text-destructive flex items-center gap-1">
-            <AlertCircle class="size-3" /> Error al obtener algunos datos
-          </span>
         </div>
+        <span v-if="isError" class="text-xs text-destructive flex items-center gap-1">
+          <AlertCircle class="size-3" /> Error al obtener algunos datos
+        </span>
       </header>
 
       <!-- Top summary -->
@@ -237,8 +253,11 @@ const chartOption = computed(() => ({
                   <ArrowUpRight v-if="(activeCategories.find(c => c.id === activeCat)?.returnPercent || 0) >= 0" class="size-3.5" />
                   <ArrowDownRight v-else class="size-3.5" />
                   {{ (activeCategories.find(c => c.id === activeCat)?.returnPercent || 0) > 0 ? '+' : '' }}{{ (activeCategories.find(c => c.id === activeCat)?.returnPercent || 0).toFixed(1) }}%
+                  <template v-if="activeCategories.find(c => c.id === activeCat)">
+                    ({{ (activeCategories.find(c => c.id === activeCat)?.returnPercent || 0) > 0 ? '+' : '' }}{{ formatCurrency(getDisplayValue(getReturnAmount(activeCategories.find(c => c.id === activeCat)!.value, activeCategories.find(c => c.id === activeCat)!.returnPercent)), displayCurrency) }})
+                  </template>
                 </span>
-                <span class="text-sm text-muted-foreground">today</span>
+                <span class="text-sm text-muted-foreground">total return</span>
               </div>
             </div>
             <span class="flex size-11 items-center justify-center rounded-xl bg-primary/15 text-primary">
@@ -362,6 +381,7 @@ const chartOption = computed(() => ({
                 <ArrowUpRight v-if="cat.returnPercent >= 0" class="size-3.5" />
                 <ArrowDownRight v-else class="size-3.5" />
                 {{ cat.returnPercent > 0 ? '+' : '' }}{{ cat.returnPercent.toFixed(1) }}%
+                <span class="ml-1 opacity-80 text-xs font-normal">({{ cat.returnPercent > 0 ? '+' : '' }}{{ formatCurrency(getDisplayValue(getReturnAmount(cat.value, cat.returnPercent)), displayCurrency) }})</span>
               </span>
             </div>
             <p class="mt-3 text-sm text-muted-foreground">{{ cat.label }}</p>
