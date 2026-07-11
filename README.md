@@ -144,9 +144,9 @@ El backend corre encapsulado en un contenedor Docker con Nginx y PHP-FPM, mientr
 **Gabriel Chacón A.**  
 Full Stack Developer / Software Engineer
 
-*   **LinkedIn:** [linkedin.com]([https://www.linkedin.com/](https://www.linkedin.com/in/gabriel-chac%C3%B3n-arellano-29ab29257/))
+*   **LinkedIn:** [linkedin.com](https://www.linkedin.com/in/gabriel-chac%C3%B3n-arellano-29ab29257/)
 *   **GitHub:** [@GabrielChaconA](https://github.com/GabrielChaconA)
-*   **Portafolio:** [Agbriel Chacon]([https://tu-sitio-web.com](https://gabriel-chacon-portfolio.onrender.com/#about))
+*   **Portafolio:** [Gabriel Chacon](https://gabriel-chacon-portfolio.onrender.com/#about)
 
 ---
 
