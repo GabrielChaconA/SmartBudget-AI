@@ -181,7 +181,7 @@ const toggleSelectAllocation = (alloc: any) => {
   <Dialog :open="open" @update:open="$emit('update:open', $event)">
     <DialogContent class="sm:max-w-[900px] border-border/50">
       <DialogHeader>
-        <DialogTitle class="text-2xl font-bold">{{ fund?.icon ? fund.icon + ' ' : '' }}{{ fund?.name || 'Caja' }}</DialogTitle>
+        <DialogTitle class="text-2xl font-bold">{{ fund?.icon && fund.icon !== 'icon-fund' ? fund.icon + ' ' : '' }}{{ fund?.name || 'Caja' }}</DialogTitle>
         <DialogDescription class="text-muted-foreground">
           Gestiona el saldo de esta caja y sus sub-asignaciones internas.
         </DialogDescription>
