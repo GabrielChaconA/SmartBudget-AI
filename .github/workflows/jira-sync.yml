@@ -1,0 +1,154 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Jira Sync – SmartBudget-IA (proyecto SBI)
+#
+# Mueve automáticamente las incidencias de Jira según la actividad en GitHub:
+#
+#   1. Se crea / sube una rama con la clave (p. ej. feature/SBI-12-login)
+#        → "En curso"      (columna In Progress)
+#   2. Se abre un Pull Request que referencia SBI-XX
+#        → "En revisión"   (columna Code Review)
+#   3. Testing/QA ("pruebas") se mueve MANUALMENTE.
+#   4. Se acepta (merge) el Pull Request
+#        → "Listo"
+#
+# La clave se busca en: nombre de la rama y título del PR.
+#
+# Secrets requeridos (Settings → Secrets and variables → Actions):
+#   JIRA_BASE_URL   → https://synthexrindustries.atlassian.net
+#   JIRA_USER_EMAIL → correo de la cuenta Atlassian dueña del token
+#   JIRA_API_TOKEN  → https://id.atlassian.com/manage-profile/security/api-tokens
+# ─────────────────────────────────────────────────────────────────────────────
+name: Jira Sync
+
+on:
+  create:
+  push:
+    branches-ignore:
+      - main
+      - develop
+  pull_request:
+    types: [opened, reopened, ready_for_review, closed]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: jira-sync-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+
+env:
+  JIRA_PROJECT_KEY: SBI
+  # IDs de estado del flujo de trabajo del proyecto SBI
+  STATUS_TODO: "10018"        # Por hacer
+  STATUS_IN_PROGRESS: "10019" # En curso
+  STATUS_REVIEW: "10020"      # En revisión
+  STATUS_TESTING: "10022"     # pruebas (manual)
+  STATUS_DONE: "10021"        # Listo
+
+jobs:
+  jira-sync:
+    runs-on: ubuntu-latest
+    # Ignorar creación de tags, ramas principales y PRs en borrador al abrirse
+    if: >-
+      (github.event_name == 'create' && github.event.ref_type == 'branch'
+        && github.event.ref != 'main' && github.event.ref != 'develop')
+      || github.event_name == 'push'
+      || (github.event_name == 'pull_request' && github.event.action == 'closed'
+        && github.event.pull_request.merged == true)
+      || (github.event_name == 'pull_request' && github.event.action != 'closed'
+        && github.event.pull_request.draft == false)
+    steps:
+      - name: Determinar acción y claves de Jira
+        id: plan
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PR_ACTION: ${{ github.event.action }}
+          BRANCH_CREATE: ${{ github.event.ref }}
+          BRANCH_PUSH: ${{ github.ref_name }}
+          PR_HEAD: ${{ github.event.pull_request.head.ref }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          set -euo pipefail
+          case "$EVENT_NAME" in
+            create)
+              text="$BRANCH_CREATE"
+              target="$STATUS_IN_PROGRESS"
+              allowed_from="$STATUS_TODO" ;;
+            push)
+              text="$BRANCH_PUSH"
+              target="$STATUS_IN_PROGRESS"
+              allowed_from="$STATUS_TODO" ;;
+            pull_request)
+              text="$PR_HEAD $PR_TITLE"
+              if [ "$PR_ACTION" = "closed" ]; then
+                target="$STATUS_DONE"
+                allowed_from="any"
+              else
+                target="$STATUS_REVIEW"
+                allowed_from="$STATUS_TODO,$STATUS_IN_PROGRESS"
+              fi ;;
+          esac
+
+          keys=$(echo "$text" | grep -oiE "${JIRA_PROJECT_KEY}-[0-9]+" \
+                  | tr '[:lower:]' '[:upper:]' | sort -u | tr '\n' ' ' || true)
+
+          echo "Texto analizado: $text"
+          echo "Claves encontradas: ${keys:-ninguna}"
+          echo "keys=$keys" >> "$GITHUB_OUTPUT"
+          echo "target=$target" >> "$GITHUB_OUTPUT"
+          echo "allowed_from=$allowed_from" >> "$GITHUB_OUTPUT"
+
+      - name: Transicionar incidencias en Jira
+        if: steps.plan.outputs.keys != ''
+        env:
+          JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
+          JIRA_USER_EMAIL: ${{ secrets.JIRA_USER_EMAIL }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+          KEYS: ${{ steps.plan.outputs.keys }}
+          TARGET: ${{ steps.plan.outputs.target }}
+          ALLOWED_FROM: ${{ steps.plan.outputs.allowed_from }}
+        run: |
+          set -euo pipefail
+          if [ -z "${JIRA_BASE_URL:-}" ] || [ -z "${JIRA_USER_EMAIL:-}" ] || [ -z "${JIRA_API_TOKEN:-}" ]; then
+            echo "::error::Faltan los secrets JIRA_BASE_URL / JIRA_USER_EMAIL / JIRA_API_TOKEN"
+            exit 1
+          fi
+          base="${JIRA_BASE_URL%/}"
+          auth="$JIRA_USER_EMAIL:$JIRA_API_TOKEN"
+
+          for key in $KEYS; do
+            echo "── $key"
+            issue=$(curl -sS -f -u "$auth" -H "Accept: application/json" \
+                     "$base/rest/api/3/issue/$key?fields=status") || {
+              echo "::warning::$key no existe o no es accesible; se omite."
+              continue
+            }
+            current=$(echo "$issue" | jq -r '.fields.status.id')
+            current_name=$(echo "$issue" | jq -r '.fields.status.name')
+            echo "Estado actual: $current_name ($current)"
+
+            if [ "$current" = "$TARGET" ]; then
+              echo "Ya está en el estado destino; nada que hacer."
+              continue
+            fi
+            # Evita retrocesos (p. ej. un push no debe regresar algo de "En revisión" a "En curso")
+            if [ "$ALLOWED_FROM" != "any" ] && [[ ",$ALLOWED_FROM," != *",$current,"* ]]; then
+              echo "Estado actual fuera de los permitidos ($ALLOWED_FROM); no se mueve."
+              continue
+            fi
+
+            transition_id=$(curl -sS -f -u "$auth" -H "Accept: application/json" \
+                "$base/rest/api/3/issue/$key/transitions" \
+              | jq -r --arg t "$TARGET" '[.transitions[] | select(.to.id == $t)][0].id // empty')
+
+            if [ -z "$transition_id" ]; then
+              echo "::warning::$key no tiene transición disponible hacia el estado $TARGET."
+              continue
+            fi
+
+            curl -sS -f -u "$auth" -X POST \
+              -H "Content-Type: application/json" \
+              -d "{\"transition\":{\"id\":\"$transition_id\"}}" \
+              "$base/rest/api/3/issue/$key/transitions"
+            echo "✔ $key movida (transición $transition_id → estado $TARGET)"
+          done
