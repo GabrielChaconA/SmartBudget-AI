@@ -29,12 +29,20 @@ onMounted(() => {
   // Ensure dark mode is applied if they want it black
   document.documentElement.classList.add('dark')
 
-  if (route.query.token) {
-    const token = route.query.token as string;
-    localStorage.setItem('auth_token', token);
-    import('axios').then(({ default: axios }) => {
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-      router.push('/');
+  if (route.query.code) {
+    // Login con Google: el backend entrega un código de un solo uso (60 s) que se
+    // canjea por el token; el token ya no viaja en la URL (SEC-03 / V-05).
+    const code = route.query.code as string;
+    router.replace({ path: '/login' }); // quita el código de la URL y del historial
+    import('axios').then(async ({ default: axios }) => {
+      try {
+        const { data } = await axios.post('/api/auth/google/exchange', { code });
+        localStorage.setItem('auth_token', data.access_token);
+        axios.defaults.headers.common['Authorization'] = `Bearer ${data.access_token}`;
+        router.push('/');
+      } catch {
+        error.value = 'Google Login failed. Please try again.';
+      }
     });
   } else if (route.query.error) {
     error.value = 'Google Login failed. Please try again.';

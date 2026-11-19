@@ -38,9 +38,9 @@ class ProfileController extends Controller
         ]);
 
         $file = $request->file('file');
-        $cloudName = env('CLOUDINARY_CLOUD_NAME');
-        $apiKey = env('CLOUDINARY_API_KEY');
-        $apiSecret = env('CLOUDINARY_API_SECRET');
+        $cloudName = config('services.cloudinary.cloud_name');
+        $apiKey = config('services.cloudinary.api_key');
+        $apiSecret = config('services.cloudinary.api_secret');
         $timestamp = time();
 
         $stringToSign = "timestamp={$timestamp}" . $apiSecret;
@@ -65,9 +65,14 @@ class ProfileController extends Controller
             ]);
         }
 
+        // SEC-03 / V-12: el detalle del proveedor solo va a los logs, no al cliente.
+        \Illuminate\Support\Facades\Log::warning('avatar_upload.failed', [
+            'status' => $response->status(),
+            'provider_error' => $response->json('error.message'),
+        ]);
+
         return response()->json([
-            'error' => 'Failed to upload to Cloudinary', 
-            'details' => $response->json()
+            'error' => 'Failed to upload avatar',
         ], 500);
     }
 }

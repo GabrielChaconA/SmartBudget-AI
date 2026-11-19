@@ -50,7 +50,8 @@ return [
     |
     */
 
-    'expiration' => null,
+    // SEC-03 / V-05: los tokens expiran (7 días por defecto). SANCTUM_EXPIRATION=0 los deja sin expiración.
+    'expiration' => ((int) env('SANCTUM_EXPIRATION', 60 * 24 * 7)) ?: null,
 
     /*
     |--------------------------------------------------------------------------

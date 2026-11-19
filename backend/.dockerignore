@@ -1,0 +1,12 @@
+# SEC-03 / V-10: secretos, datos y herramientas de desarrollo fuera de la imagen.
+.env
+.env.*
+!.env.example
+*.sql
+run_all.php
+run_seed.php
+tests/
+node_modules/
+vendor/
+storage/logs/*.log
+.phpunit.result.cache

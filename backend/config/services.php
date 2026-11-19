@@ -35,6 +35,18 @@ return [
         ],
     ],
 
+    // SEC-03 / V-09: credenciales leídas desde config (env() devuelve null con config:cache).
+    'cloudinary' => [
+        'cloud_name' => env('CLOUDINARY_CLOUD_NAME'),
+        'api_key' => env('CLOUDINARY_API_KEY'),
+        'api_secret' => env('CLOUDINARY_API_SECRET'),
+    ],
+
+    'finnhub' => [
+        // FINNHUB_API_KEY es la variable del backend; VITE_FINNHUB_API_KEY se mantiene como respaldo temporal.
+        'key' => env('FINNHUB_API_KEY', env('VITE_FINNHUB_API_KEY')),
+    ],
+
     'google' => [
         'client_id' => env('GOOGLE_CLIENT_ID'),
         'client_secret' => env('GOOGLE_CLIENT_SECRET'),

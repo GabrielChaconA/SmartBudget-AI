@@ -4,14 +4,21 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 use Laravel\Socialite\Facades\Socialite;
 
 class GoogleAuthController extends Controller
 {
+    /**
+     * Vigencia del código de un solo uso que el frontend canjea por el token (SEC-03 / V-05).
+     */
+    public const LOGIN_CODE_TTL_SECONDS = 60;
+
     public function redirect()
     {
         return Socialite::driver('google')->stateless()->redirect();
@@ -19,6 +26,8 @@ class GoogleAuthController extends Controller
 
     public function callback()
     {
+        $frontendUrl = rtrim((string) config('app.frontend_url'), '/');
+
         try {
             $googleUser = Socialite::driver('google')->stateless()->user();
 
@@ -50,7 +59,7 @@ class GoogleAuthController extends Controller
                 if ($googleUser->avatar && Schema::hasColumn('users', 'avatar')) {
                     $userData['avatar'] = $googleUser->avatar;
                 }
-                
+
                 $user = User::create($userData);
             }
 
@@ -73,19 +82,52 @@ class GoogleAuthController extends Controller
                 ]);
             }
 
-            $token = $user->createToken('auth_token')->plainTextToken;
+            // El token ya no viaja en la URL: se entrega un código de un solo uso que
+            // el frontend canjea en POST /api/auth/google/exchange.
+            $code = Str::random(64);
+            Cache::put(self::loginCodeCacheKey($code), $user->id, now()->addSeconds(self::LOGIN_CODE_TTL_SECONDS));
 
-            // Redirect back to frontend with the token
-            $frontendUrl = env('FRONTEND_URL', 'http://localhost:5173');
-            return redirect()->away($frontendUrl . '/login?token=' . $token);
+            return redirect()->away($frontendUrl . '/login?code=' . $code);
 
         } catch (\Exception $e) {
             Log::error('Google Login Error: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString()
             ]);
-            $frontendUrl = env('FRONTEND_URL', 'http://localhost:5173');
             return redirect()->away($frontendUrl . '/login?error=GoogleLoginFailed');
         }
     }
-}
 
+    /**
+     * Canjea el código de un solo uso por un token de Sanctum.
+     */
+    public function exchange(Request $request)
+    {
+        $validated = $request->validate([
+            'code' => 'required|string|size:64',
+        ]);
+
+        $userId = Cache::pull(self::loginCodeCacheKey($validated['code']));
+        $user = $userId ? User::find($userId) : null;
+
+        if (!$user) {
+            return response()->json(['message' => 'Invalid or expired login code'], 401);
+        }
+
+        $token = $user->createToken('auth_token')->plainTextToken;
+
+        return response()->json([
+            'message' => 'Logged in successfully',
+            'access_token' => $token,
+            'token_type' => 'Bearer',
+            'user' => $user,
+        ]);
+    }
+
+    /**
+     * En caché se guarda el hash del código, no el código.
+     */
+    public static function loginCodeCacheKey(string $code): string
+    {
+        return 'google_login_code:' . hash('sha256', $code);
+    }
+}

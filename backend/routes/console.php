@@ -9,3 +9,6 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 Schedule::command('alerts:check')->everyMinute();
+
+// Limpia los tokens de Sanctum vencidos (SEC-03 / V-05).
+Schedule::command('sanctum:prune-expired --hours=24')->daily();

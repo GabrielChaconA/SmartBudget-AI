@@ -3,7 +3,8 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rules\Password;
 use App\Models\User;
 
 class AuthController extends Controller
@@ -13,7 +14,7 @@ class AuthController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users',
-            'password' => 'required|confirmed|min:6',
+            'password' => ['required', 'confirmed', Password::min(8)],
         ]);
 
         $user = User::create([
@@ -58,14 +59,14 @@ class AuthController extends Controller
 
         $user = User::where('email', $request->email)->first();
 
-        $isValidPassword = false;
-        if ($user) {
-            if ($user->password === $request->password) {
-                $isValidPassword = true;
-            } elseif (str_starts_with($user->password, '$2') && \Illuminate\Support\Facades\Hash::check($request->password, $user->password)) {
-                $isValidPassword = true;
-            }
-        }
+        // Solo se aceptan contraseñas guardadas como hash (SEC-03 / V-01). Las cuentas
+        // antiguas con contraseña en texto plano se migran con
+        // 2026_11_19_000000_hash_plaintext_user_passwords.
+        $storedHash = $user?->password;
+        $isValidPassword = is_string($storedHash)
+            && $storedHash !== ''
+            && Hash::isHashed($storedHash)
+            && Hash::check($request->password, $storedHash);
 
         if (!$isValidPassword) {
             return response()->json([
