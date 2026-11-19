@@ -6,6 +6,7 @@ from fastapi.security import APIKeyHeader
 from app.api.errors import ApiError
 from app.config import Settings, normalize_model_name
 from app.services.ollama_client import OllamaClient
+from app.services.prompt_loader import PromptRegistry
 
 TOKEN_HEADER = "X-AI-Service-Token"
 
@@ -22,6 +23,10 @@ def get_settings(request: Request) -> Settings:
 
 def get_ollama(request: Request) -> OllamaClient:
     return request.app.state.ollama
+
+
+def get_prompts(request: Request) -> PromptRegistry:
+    return request.app.state.prompts
 
 
 async def require_service_token(

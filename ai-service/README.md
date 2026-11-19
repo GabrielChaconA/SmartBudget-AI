@@ -97,6 +97,25 @@ Cualquier endpoint de inferencia acepta el header opcional `X-AI-Model` con un m
 `AI_ALLOWED_MODELS` (si no está en la lista: `400 model_not_allowed`). Así puedes comparar
 `qwen3:8b`, `gemma4:e4b` y `gemma4:26b` con la misma petición sin reiniciar el servicio.
 
+## Prompts versionados
+
+```
+prompts/
+├── system/    persona y guardrails (tono amable y conciso; solo recomienda, nunca ejecuta)
+├── tasks/     <tarea>.yaml (manifiesto + versión + textos) y <tarea>.<es|en>.j2
+├── context/   financial_context.<es|en>.j2 — donde se inyecta el contexto de Laravel
+├── output/    JSON Schemas de las respuestas estructuradas
+└── examples/  ejemplos few-shot por tarea e idioma
+```
+
+- Cada tarea tiene un id `<tarea>@<versión>` (p. ej. `purchase_check@1.0`) que se devuelve
+  como `prompt_version` en cada respuesta para que Laravel lo guarde (SBI-12).
+  **Sube la versión** del manifiesto cada vez que cambies cualquier pieza de la tarea.
+- El idioma (`es` / `en`) se elige por petición; cada plantilla tiene una variante por idioma.
+- `app/services/prompt_loader.py` valida todo al iniciar: si falta una plantilla, un schema,
+  una parte de `system/` o un texto, o si un ejemplo no cumple su schema, **el servicio no arranca**.
+- Las plantillas actuales son mínimas; su redacción final es parte de SBI-12.
+
 ## Errores
 
 Todos los errores tienen el mismo cuerpo:

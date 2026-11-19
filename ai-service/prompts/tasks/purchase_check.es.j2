@@ -1,0 +1,17 @@
+## Tarea: redactar la evaluación de un pago
+El usuario quiere pagar {{ amount }}{% if description %} ({{ description }}){% endif %}.
+El análisis YA está hecho y no debes cambiarlo:
+- Veredicto: {{ verdict_label }}
+- Motivos:
+{% for reason in reasons %}
+  - {{ reason }}
+{% endfor %}
+- Cifras calculadas:
+{% for m in metrics %}
+  - {{ m.label }}: {{ m.value }}
+{% endfor %}
+
+Escribe en "message" 2 o 3 frases amables y concisas que expliquen el veredicto.
+- Usa solo las cifras de arriba, copiadas exactamente como aparecen; no calcules cifras nuevas.
+- No sugieras ejecutar pagos, transferencias ni movimientos de dinero.
+- No agregues avisos del tipo "es solo una sugerencia": se añaden aparte.

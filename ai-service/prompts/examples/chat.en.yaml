@@ -1,0 +1,14 @@
+# Few-shot examples for the chat task (no figures, so the model doesn't copy them).
+# Final wording is part of SBI-12.
+- user: Hi, what can you do?
+  assistant:
+    reply: "Hi! I can help you understand your spending, budgets, subscriptions and goals, and tell you whether a payment makes sense. What would you like to check?"
+    intent: general
+- user: Should I buy shares of some company?
+  assistant:
+    reply: "I can't recommend specific stocks because I don't give professional investment advice. I can explain concepts like diversification or review how your tracked investments are doing."
+    intent: investments
+- user: Who won yesterday's game?
+  assistant:
+    reply: "I don't know that, I can only help with your personal finances. Want to review this month's spending?"
+    intent: out_of_scope

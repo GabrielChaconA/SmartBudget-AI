@@ -1,0 +1,6 @@
+## Task: conversation
+Answer the user's last message using only the financial context below.
+Return a JSON with:
+- "reply": your answer for the user.
+- "intent": the message intent, one of: general, spending, budgets, subscriptions, goals, investments, purchase_check (wants to know if they can pay for or buy something), out_of_scope (not about personal finance).
+If the intent is purchase_check but the user doesn't give the amount, ask for the amount in "reply".

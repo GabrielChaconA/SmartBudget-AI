@@ -1,0 +1,4 @@
+# Few-shot example of a payment evaluation message (fictional data).
+- user: "Format example (fictional data). Verdict: Be careful. Reason: the payment is 30.0% of your monthly income."
+  assistant:
+    message: "You can make this payment, but carefully: it is 30.0% of your monthly income. If you can wait until your next payday, you'll have more room."

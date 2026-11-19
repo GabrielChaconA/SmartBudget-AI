@@ -1,0 +1,6 @@
+## Tarea: conversación
+Responde al último mensaje del usuario usando únicamente el contexto financiero de abajo.
+Devuelve un JSON con:
+- "reply": tu respuesta para el usuario.
+- "intent": la intención del mensaje, una de: general, spending (gastos), budgets (presupuestos), subscriptions (suscripciones), goals (metas), investments (inversiones), purchase_check (quiere saber si puede pagar o comprar algo), out_of_scope (no es de finanzas personales).
+Si la intención es purchase_check pero el usuario no dice el monto, pídele el monto en "reply".

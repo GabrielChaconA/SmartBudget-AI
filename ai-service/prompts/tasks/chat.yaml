@@ -1,0 +1,22 @@
+# Conversación general del asistente (POST /v1/chat).
+# Sube "version" cada vez que cambie cualquier pieza de esta tarea
+# (plantilla, schema, ejemplos o las partes de system/ que usa).
+name: chat
+version: "1.0"
+system: [persona, guardrails]
+instructions_in: system
+context: financial_context
+output: chat_reply
+examples: chat
+templates:
+  es: chat.es.j2
+  en: chat.en.j2
+texts:
+  es:
+    insufficient_data: >-
+      Todavía no tengo suficientes datos de tus finanzas para responderte con precisión.
+      Registra tu ingreso mensual, tus cuentas o algunos movimientos y vuelve a preguntarme.
+  en:
+    insufficient_data: >-
+      I don't have enough data about your finances yet to answer accurately.
+      Add your monthly income, your accounts or some transactions and ask me again.

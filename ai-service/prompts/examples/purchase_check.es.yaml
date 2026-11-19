@@ -1,0 +1,4 @@
+# Ejemplo few-shot de la redacción de una evaluación de pago (datos ficticios).
+- user: "Ejemplo de formato (datos ficticios). Veredicto: Con precaución. Motivo: el pago equivale al 30.0% de tu ingreso mensual."
+  assistant:
+    message: "Puedes hacer este pago, pero con cuidado: equivale al 30.0% de tu ingreso mensual. Si puedes esperar a tu próximo día de pago, tendrás más margen."

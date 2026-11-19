@@ -16,6 +16,10 @@ from app.api.v1 import models
 from app.config import Settings, get_settings
 from app.logging_config import configure_logging
 from app.services.ollama_client import OllamaClient
+from app.services.prompt_loader import PromptRegistry
+
+# Tareas cuyos prompts deben existir para que el servicio arranque.
+REQUIRED_PROMPT_TASKS = ("chat", "insights", "purchase_check")
 
 DESCRIPTION = """
 Servicio **interno y sin estado** que es la única pieza que habla con Ollama.
@@ -34,6 +38,8 @@ def create_app(
 ) -> FastAPI:
     settings = settings or get_settings()
     configure_logging(settings.log_level)
+    # Falla al iniciar (PromptConfigError) si falta una plantilla o un schema.
+    prompts = PromptRegistry.load(settings.prompts_dir, required_tasks=REQUIRED_PROMPT_TASKS)
 
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
@@ -55,6 +61,7 @@ def create_app(
         openapi_url="/openapi.json" if docs else None,
     )
     app.state.settings = settings
+    app.state.prompts = prompts
 
     register_exception_handlers(app)
 

@@ -1,0 +1,18 @@
+# Insights financieros (POST /v1/insights).
+name: insights
+version: "1.0"
+system: [persona, guardrails]
+instructions_in: user
+context: financial_context
+output: insights
+examples: insights
+templates:
+  es: insights.es.j2
+  en: insights.en.j2
+texts:
+  es:
+    insufficient_data: Aún no hay suficientes datos financieros para generar insights.
+    invalid_model_output: El modelo no generó insights válidos.
+  en:
+    insufficient_data: There is not enough financial data yet to generate insights.
+    invalid_model_output: The model did not produce valid insights.
