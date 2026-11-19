@@ -4,9 +4,11 @@ from app.api.deps import get_ollama, get_prompts, get_settings, resolve_model
 from app.api.errors import MODEL_ERROR_RESPONSES
 from app.config import Settings
 from app.schemas.inference import ChatRequest, ChatResponse, InsightsRequest, InsightsResponse
+from app.schemas.purchase import PurchaseCheckRequest, PurchaseCheckResponse
 from app.services import inference
 from app.services.ollama_client import OllamaClient
 from app.services.prompt_loader import PromptRegistry
+from app.services.purchase.service import evaluate_purchase
 
 router = APIRouter(tags=["inference"])
 
@@ -19,7 +21,8 @@ router = APIRouter(tags=["inference"])
     description=(
         "Recibe el contexto financiero, el historial y el mensaje actual; devuelve la "
         "respuesta, la intención detectada y la versión del prompt. Con un contexto vacío "
-        "responde `status=insufficient_data` sin llamar al modelo."
+        "responde `status=insufficient_data` sin llamar al modelo. Si el mensaje es "
+        "\"quiero pagar X\" con monto, `intent=purchase_check` y `purchase` trae la evaluación."
     ),
 )
 async def chat(
@@ -50,3 +53,28 @@ async def insights(
     model: str = Depends(resolve_model),
 ) -> InsightsResponse:
     return await inference.run_insights(req, ollama=ollama, prompts=prompts, model=model)
+
+
+@router.post(
+    "/purchase-check",
+    response_model=PurchaseCheckResponse,
+    responses=MODEL_ERROR_RESPONSES,
+    summary="¿Es recomendable este pago? Veredicto determinista + mensaje del modelo",
+    description=(
+        "Las cifras y el veredicto (`recomendable`, `precaucion`, `no_recomendable`) se "
+        "calculan en Python; el modelo solo redacta `message`. Si el modelo falla o su texto "
+        "trae cifras no calculadas, se usa un mensaje de plantilla (`message_source=template`). "
+        "Si faltan datos requeridos, `status=insufficient_data` y `verdict=null`. "
+        "El servicio nunca ejecuta movimientos de dinero."
+    ),
+)
+async def purchase_check(
+    req: PurchaseCheckRequest,
+    ollama: OllamaClient = Depends(get_ollama),
+    prompts: PromptRegistry = Depends(get_prompts),
+    model: str = Depends(resolve_model),
+) -> PurchaseCheckResponse:
+    return await evaluate_purchase(
+        req.context, req.amount, req.description, req.language,
+        ollama=ollama, prompts=prompts, model=model,
+    )

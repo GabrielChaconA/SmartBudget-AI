@@ -93,12 +93,34 @@ Todas las variables están documentadas en [.env.example](.env.example). Las pri
 | POST | `/v1/chat` | sí | `{context, history, message, language}` → `{status, reply, intent, prompt_version, model, usage}` (SBI-11) |
 | POST | `/v1/insights` | sí | `{context, language}` → `{status, insights[1..3], reason, prompt_version, model, usage}` (SBI-14) |
 
+| POST | `/v1/purchase-check` | sí | `{context, amount, description?, language}` → `{status, verdict, reasons[], metrics, message, message_source, prompt_version, model, missing_data}` |
+
 Request y response están definidos con Pydantic y documentados en `/docs`.
 
 - **Contexto vacío** → `status: "insufficient_data"` con un mensaje fijo; no se llama al modelo.
 - **Insights inválidos** → `status: "model_error"`, `insights: []` y `reason` (nunca se devuelve
   algo que no cumpla el schema). Si Ollama está caído o hay timeout → 503 / 504.
 - `usage` trae duración y tokens de la llamada: útil para comparar modelos.
+
+### Evaluación de pagos ("Quiero pagar X")
+
+Se activa con `POST /v1/purchase-check` o cuando `/v1/chat` detecta un mensaje como
+*"quiero pagar 8,000 de una TV"* (detección con reglas, sin LLM; la respuesta trae
+`intent: "purchase_check"` y el objeto `purchase`).
+
+1. **Métricas en Python** (`app/services/purchase/metrics.py`): dinero libre (saldo de cuentas
+   no crédito − suscripciones que se cobran antes del próximo payday), % del ingreso mensual,
+   presupuesto restante del mes y aporte mensual que necesitan las metas activas.
+2. **Veredicto por reglas** (`verdict_rules.py`): `recomendable`, `precaucion` o
+   `no_recomendable`, con los motivos (`reasons[]`). Con las mismas cifras siempre es el mismo.
+3. **El modelo solo redacta** `message` a partir de cifras y veredicto ya calculados. Si su texto
+   contiene cifras que no salen de los cálculos, afirma haber movido dinero, o el modelo falla,
+   se usa un mensaje de plantilla (`message_source: "template"`). El veredicto nunca cambia.
+4. `message` siempre termina con el aviso de que es una sugerencia y la decisión es del usuario.
+
+Si falta `monthly_income`, `payday` o el saldo de cuentas: `status: "insufficient_data"`,
+`verdict: null` y `missing_data` dice qué falta (no se suponen valores). Presupuestos, fechas de
+suscripciones o fechas límite de metas que falten se listan en `missing_data` pero no bloquean.
 
 ### Mini conversación con el modelo
 

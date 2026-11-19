@@ -4,6 +4,7 @@ todo llega en la petición (contexto armado por Laravel)."""
 from __future__ import annotations
 
 from app.config import Settings
+from app.schemas.common import Usage
 from app.schemas.inference import (
     ChatModelOutput,
     ChatRequest,
@@ -11,20 +12,12 @@ from app.schemas.inference import (
     InsightsModelOutput,
     InsightsRequest,
     InsightsResponse,
-    Usage,
 )
 from app.services.exceptions import InvalidModelOutput
-from app.services.ollama_client import OllamaClient, StructuredResult
+from app.services.ollama_client import OllamaClient
 from app.services.prompt_loader import PromptRegistry
-
-
-def usage_of(result: StructuredResult) -> Usage:
-    return Usage(
-        duration_ms=result.duration_ms,
-        prompt_tokens=result.prompt_tokens,
-        completion_tokens=result.completion_tokens,
-        attempts=result.attempts,
-    )
+from app.services.purchase.amounts import detect_purchase_intent
+from app.services.purchase.service import evaluate_purchase
 
 
 async def run_chat(
@@ -35,6 +28,23 @@ async def run_chat(
     settings: Settings,
     model: str,
 ) -> ChatResponse:
+    # "Quiero pagar 8,000 de una TV" -> evaluación determinista del pago (IAL-05).
+    intent = detect_purchase_intent(req.message)
+    if intent is not None:
+        purchase = await evaluate_purchase(
+            req.context, intent.amount, intent.description, req.language,
+            ollama=ollama, prompts=prompts, model=model,
+        )
+        return ChatResponse(
+            status=purchase.status,
+            reply=purchase.message,
+            intent="purchase_check",
+            prompt_version=purchase.prompt_version,
+            model=purchase.model,
+            usage=purchase.usage,
+            purchase=purchase,
+        )
+
     if req.context.is_empty():
         # No se llama al modelo: sin datos no hay respuesta que no sea inventada.
         return ChatResponse(
@@ -63,7 +73,7 @@ async def run_chat(
         intent=result.data.intent,
         prompt_version=rendered.version,
         model=result.model,
-        usage=usage_of(result),
+        usage=Usage.from_result(result),
     )
 
 
@@ -102,5 +112,5 @@ async def run_insights(
         insights=result.data.insights,
         prompt_version=version,
         model=result.model,
-        usage=usage_of(result),
+        usage=Usage.from_result(result),
     )

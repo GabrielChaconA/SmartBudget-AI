@@ -4,7 +4,9 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
+from app.schemas.common import Usage
 from app.schemas.context import FinancialContext, Language
+from app.schemas.purchase import PurchaseCheckResponse
 
 ChatIntent = Literal[
     "general",
@@ -19,15 +21,6 @@ ChatIntent = Literal[
 InsightCategory = Literal[
     "spending", "budget", "subscriptions", "savings", "goals", "investments", "income", "general"
 ]
-
-
-class Usage(BaseModel):
-    """Métricas de la llamada al modelo (útiles para comparar modelos)."""
-
-    duration_ms: int
-    prompt_tokens: int | None = None
-    completion_tokens: int | None = None
-    attempts: int = 1
 
 
 # ------------------------------------------------------------------- chat
@@ -61,6 +54,10 @@ class ChatResponse(BaseModel):
     prompt_version: str = Field(examples=["chat@1.0"])
     model: str | None = Field(None, description="null si no se llamó al modelo")
     usage: Usage | None = None
+    purchase: PurchaseCheckResponse | None = Field(
+        None,
+        description="Evaluación del pago cuando el mensaje es 'quiero pagar X' con monto (IAL-05)",
+    )
 
 
 # --------------------------------------------------------------- insights
