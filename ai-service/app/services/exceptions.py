@@ -26,3 +26,12 @@ class ModelTimeout(AIServiceError):
     status_code = 504
     code = "model_timeout"
     retryable = True
+
+
+class InvalidModelOutput(AIServiceError):
+    """El modelo respondió algo que no cumple el JSON Schema, incluso tras reintentar.
+    Nunca se devuelve texto sin validar."""
+
+    status_code = 503
+    code = "invalid_model_output"
+    retryable = True
