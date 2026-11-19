@@ -12,7 +12,7 @@ from app import __version__
 from app.api import health
 from app.api.deps import require_service_token
 from app.api.errors import register_exception_handlers
-from app.api.v1 import models
+from app.api.v1 import inference, models
 from app.config import Settings, get_settings
 from app.logging_config import configure_logging
 from app.services.ollama_client import OllamaClient
@@ -68,4 +68,5 @@ def create_app(
     protected = [Depends(require_service_token)]
     app.include_router(health.router)
     app.include_router(models.router, prefix="/v1", dependencies=protected)
+    app.include_router(inference.router, prefix="/v1", dependencies=protected)
     return app

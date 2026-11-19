@@ -90,6 +90,30 @@ Todas las variables están documentadas en [.env.example](.env.example). Las pri
 |---|---|---|---|
 | GET | `/health` | no | Estado: `ok`, `ollama_unavailable` o `model_not_downloaded` (503 en los dos últimos) |
 | GET | `/v1/models` | sí | Modelo principal + modelos de prueba y si están descargados |
+| POST | `/v1/chat` | sí | `{context, history, message, language}` → `{status, reply, intent, prompt_version, model, usage}` (SBI-11) |
+| POST | `/v1/insights` | sí | `{context, language}` → `{status, insights[1..3], reason, prompt_version, model, usage}` (SBI-14) |
+
+Request y response están definidos con Pydantic y documentados en `/docs`.
+
+- **Contexto vacío** → `status: "insufficient_data"` con un mensaje fijo; no se llama al modelo.
+- **Insights inválidos** → `status: "model_error"`, `insights: []` y `reason` (nunca se devuelve
+  algo que no cumpla el schema). Si Ollama está caído o hay timeout → 503 / 504.
+- `usage` trae duración y tokens de la llamada: útil para comparar modelos.
+
+### Mini conversación con el modelo
+
+El servicio no guarda estado, así que una conversación es reenviar el `history` en cada
+mensaje (lo que hará Laravel en SBI-11). Para probarlo ya:
+
+- **Terminal**: `python scripts/chat_cli.py` (o `--model gemma4:e4b`). Guarda el historial en
+  memoria; `/model <nombre>` cambia de modelo, `/compare <texto>` manda el mismo mensaje a
+  todos los modelos descargados, `/reset` borra el historial.
+- **Postman**: importa `postman/SmartBudget-AI-Service.postman_collection.json`, pon tu token en
+  la variable `token` y usa *Conversación → Enviar mensaje*: un script guarda el historial en
+  la variable `history`.
+- **Swagger**: `/docs` → Authorize → `POST /v1/chat` (historial a mano).
+
+El contexto de ejemplo está en `scripts/sample_context.json` (datos ficticios).
 
 ### Probar otros modelos
 

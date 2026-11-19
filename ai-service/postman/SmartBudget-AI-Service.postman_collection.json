@@ -1,0 +1,463 @@
+{
+  "info": {
+    "name": "SmartBudget AI Service",
+    "description": "Endpoints internos del servicio de IA local (ai-service). Ajusta las variables de la colección: baseUrl, token, model.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "apikey",
+    "apikey": [
+      {
+        "key": "key",
+        "value": "X-AI-Service-Token",
+        "type": "string"
+      },
+      {
+        "key": "value",
+        "value": "{{token}}",
+        "type": "string"
+      },
+      {
+        "key": "in",
+        "value": "header",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://127.0.0.1:8001"
+    },
+    {
+      "key": "token",
+      "value": "change-me-to-a-long-random-token"
+    },
+    {
+      "key": "model",
+      "value": "gemma4:e4b"
+    },
+    {
+      "key": "language",
+      "value": "es"
+    },
+    {
+      "key": "history",
+      "value": "[]"
+    },
+    {
+      "key": "context",
+      "value": "{\"as_of\": \"2026-11-19\", \"currency\": \"MXN\", \"monthly_income\": 20000, \"payday\": 30, \"month_income\": 20000, \"month_expenses\": 9000, \"accounts\": [{\"name\": \"Cartera\", \"type\": \"cash\", \"balance\": 2000}, {\"name\": \"BBVA\", \"type\": \"bank\", \"balance\": 18000}, {\"name\": \"Tarjeta\", \"type\": \"credit\", \"balance\": -5000}], \"funds\": [{\"name\": \"Comida\", \"balance\": 2000, \"categories\": [\"Supermercado\", \"Restaurantes\"]}], \"subscriptions\": [{\"name\": \"Netflix\", \"amount\": 299, \"billing_cycle\": \"monthly\", \"next_billing_date\": \"2026-11-25\"}, {\"name\": \"Spotify\", \"amount\": 129, \"billing_cycle\": \"monthly\", \"next_billing_date\": \"2026-12-05\"}, {\"name\": \"Gimnasio\", \"amount\": 650, \"billing_cycle\": \"monthly\", \"next_billing_date\": \"2026-11-28\"}], \"budgets\": [{\"category\": \"Comida\", \"amount\": 6000, \"spent\": 4000}, {\"category\": \"Entretenimiento\", \"amount\": 2000, \"spent\": 1000}], \"goals\": [{\"name\": \"Viaje\", \"target_amount\": 12000, \"current_amount\": 6000, \"deadline\": \"2027-05-19\", \"status\": \"active\"}], \"investments\": [{\"symbol\": \"VOO\", \"type\": \"etf\", \"quantity\": 2, \"average_price\": 9000, \"current_price\": 9500, \"currency\": \"MXN\"}], \"recent_transactions\": [{\"date\": \"2026-11-18\", \"type\": \"expense\", \"amount\": 450, \"category\": \"Comida\", \"description\": \"Súper\"}, {\"date\": \"2026-11-15\", \"type\": \"income\", \"amount\": 10000, \"category\": \"Salario\", \"description\": \"Quincena\"}]}"
+    }
+  ],
+  "item": [
+    {
+      "name": "Estado",
+      "item": [
+        {
+          "name": "Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "health"
+              ]
+            },
+            "description": "No requiere token."
+          }
+        },
+        {
+          "name": "Modelos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/models",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "models"
+              ]
+            },
+            "description": ""
+          }
+        }
+      ]
+    },
+    {
+      "name": "Conversación",
+      "item": [
+        {
+          "name": "Enviar mensaje (mantiene historial)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/chat",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "chat"
+              ]
+            },
+            "description": "Mini conversación: cambia `message` y vuelve a enviar. El script guarda el par usuario/asistente en la variable de colección `history`. Para empezar de nuevo, ejecuta 'Reiniciar conversación'. Para probar otro modelo agrega el header X-AI-Model.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"context\": {{context}},\n  \"history\": {{history}},\n  \"message\": \"Hola, ¿cómo voy con mis gastos este mes?\",\n  \"language\": \"{{language}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.collectionVariables.get('history')) { pm.collectionVariables.set('history', '[]'); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "  const sent = JSON.parse(pm.variables.replaceIn(pm.request.body.raw));",
+                  "  const history = JSON.parse(pm.collectionVariables.get('history') || '[]');",
+                  "  history.push({ role: 'user', content: sent.message });",
+                  "  history.push({ role: 'assistant', content: res.reply });",
+                  "  pm.collectionVariables.set('history', JSON.stringify(history));",
+                  "  console.log(`[${res.model}] ${res.reply}`);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Reiniciar conversación",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "health"
+              ]
+            },
+            "description": "Solo borra la variable `history` (usa /health como petición inocua)."
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('history', '[]');"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Chat",
+      "item": [
+        {
+          "name": "Chat",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/chat",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "chat"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"context\": {{context}},\n  \"history\": [],\n  \"message\": \"¿Cuánto llevo gastado este mes y en qué?\",\n  \"language\": \"es\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Chat (modelo de prueba X-AI-Model)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-AI-Model",
+                "value": "{{model}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/chat",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "chat"
+              ]
+            },
+            "description": "Usa la variable `model` (qwen3:8b, gemma4:e4b o gemma4:26b).",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"context\": {{context}},\n  \"history\": [],\n  \"message\": \"¿Qué suscripciones pago y cuándo se cobran?\",\n  \"language\": \"es\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Chat (con historial)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/chat",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "chat"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"context\": {{context}},\n  \"history\": [\n    {\n      \"role\": \"user\",\n      \"content\": \"¿Cuánto pago de suscripciones?\"\n    },\n    {\n      \"role\": \"assistant\",\n      \"content\": \"Pagas Netflix, Spotify y el gimnasio.\"\n    }\n  ],\n  \"message\": \"¿Y cuál se cobra primero?\",\n  \"language\": \"es\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Chat (English)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/chat",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "chat"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"context\": {{context}},\n  \"history\": [],\n  \"message\": \"How am I doing with my budgets?\",\n  \"language\": \"en\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Chat (contexto vacío → insufficient_data)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/chat",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "chat"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"context\": {},\n  \"history\": [],\n  \"message\": \"¿Cómo voy?\",\n  \"language\": \"es\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Insights",
+      "item": [
+        {
+          "name": "Insights",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/insights",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "insights"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"context\": {{context}},\n  \"language\": \"es\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Insights (modelo de prueba)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-AI-Model",
+                "value": "{{model}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/insights",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "insights"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"context\": {{context}},\n  \"language\": \"es\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Insights (contexto vacío)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/insights",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "insights"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"context\": {},\n  \"language\": \"es\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
