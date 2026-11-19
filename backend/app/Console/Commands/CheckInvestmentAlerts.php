@@ -46,7 +46,7 @@ class CheckInvestmentAlerts extends Command
             } else {
                 // Finnhub for stocks
                 try {
-                    $token = env('VITE_FINNHUB_API_KEY');
+                    $token = config('services.finnhub.key');
                     $response = Http::get("https://finnhub.io/api/v1/quote?symbol={$symbol}&token={$token}");
                     if ($response->successful()) {
                         $prices[$symbol] = $response->json()['c'] ?? null;

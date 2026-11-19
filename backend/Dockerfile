@@ -28,7 +28,7 @@ RUN composer install --no-dev --optimize-autoloader --no-interaction
 RUN ./vendor/bin/rr get --no-interaction
 
 # Set permissions for Laravel directories
-RUN chmod -R 777 storage bootstrap/cache
+RUN chmod -R ug+rwX storage bootstrap/cache
 
 # Make the start script executable
 RUN chmod +x start.sh

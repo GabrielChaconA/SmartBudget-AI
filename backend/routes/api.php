@@ -5,8 +5,12 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ProfileController;
 
-Route::post('/login', [AuthController::class, 'login']);
-Route::post('/register', [AuthController::class, 'register']);
+// Límite de intentos definido en App\Providers\SecurityServiceProvider (SEC-03 / V-06).
+Route::middleware('throttle:auth')->group(function () {
+    Route::post('/login', [AuthController::class, 'login']);
+    Route::post('/register', [AuthController::class, 'register']);
+    Route::post('/auth/google/exchange', [\App\Http\Controllers\Auth\GoogleAuthController::class, 'exchange']);
+});
 
 Route::get('/auth/google/redirect', [\App\Http\Controllers\Auth\GoogleAuthController::class, 'redirect']);
 Route::get('/auth/google/callback', [\App\Http\Controllers\Auth\GoogleAuthController::class, 'callback']);
@@ -64,7 +68,7 @@ Route::middleware('auth:sanctum')->group(function () {
         if ($account) {
             \Illuminate\Support\Facades\DB::table('accounts')
                 ->where('id', $account->id)
-                ->update(['balance' => \Illuminate\Support\Facades\DB::raw('balance + ' . $amount)]);
+                ->increment('balance', $amount);
         } else {
             $accountId = \Illuminate\Support\Facades\DB::table('accounts')->insertGetId([
                 'user_id' => $userId,
@@ -183,7 +187,18 @@ Route::middleware('auth:sanctum')->group(function () {
             'amount' => 'required|numeric',
             'icon' => 'nullable|string|max:5',
         ]);
-        // Simple logic to find or create category
+
+        // SEC-03 / V-02: el fondo debe pertenecer al usuario autenticado.
+        $fund = \Illuminate\Support\Facades\DB::table('funds')
+            ->where('id', $id)
+            ->where('user_id', $request->user()->id)
+            ->first();
+        if (!$fund) {
+            return response()->json(['success' => false, 'message' => 'Fund not found'], 404);
+        }
+
+        // Simple logic to find or create category.
+        // `categories` es global: una categoría existente no se modifica desde aquí.
         $category = \Illuminate\Support\Facades\DB::table('categories')
             ->where('name', $validated['category_name'])
             ->first();
@@ -195,11 +210,6 @@ Route::middleware('auth:sanctum')->group(function () {
             ]);
         } else {
             $categoryId = $category->id;
-            if (isset($validated['icon']) && $category->icon !== $validated['icon']) {
-                \Illuminate\Support\Facades\DB::table('categories')
-                    ->where('id', $categoryId)
-                    ->update(['icon' => $validated['icon']]);
-            }
         }
 
         $existing = \Illuminate\Support\Facades\DB::table('fund_allocations')
@@ -219,7 +229,6 @@ Route::middleware('auth:sanctum')->group(function () {
             ]);
         }
 
-        $fund = \Illuminate\Support\Facades\DB::table('funds')->where('id', $id)->first();
         $absAmount = abs($validated['amount']);
         $title = 'Asignación de Caja';
 
@@ -236,6 +245,15 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     Route::delete('/funds/{id}/allocations/{categoryName}', function (Request $request, $id, $categoryName) {
+        // SEC-03 / V-02: el fondo debe pertenecer al usuario autenticado.
+        $ownsFund = \Illuminate\Support\Facades\DB::table('funds')
+            ->where('id', $id)
+            ->where('user_id', $request->user()->id)
+            ->exists();
+        if (!$ownsFund) {
+            return response()->json(['success' => false, 'message' => 'Fund not found'], 404);
+        }
+
         $category = \Illuminate\Support\Facades\DB::table('categories')
             ->where('name', $categoryName)
             ->first();
@@ -279,7 +297,7 @@ Route::middleware('auth:sanctum')->group(function () {
             'amount' => 'required|numeric',
             'billing_cycle' => 'required|string|max:50',
             'next_billing_date' => 'required|date',
-            'category_id' => 'nullable|integer'
+            'category_id' => 'nullable|integer|exists:categories,id'
         ]);
 
         $validated['user_id'] = $request->user()->id;
@@ -289,22 +307,6 @@ Route::middleware('auth:sanctum')->group(function () {
         return response()->json($validated);
     });
 
-    Route::post('/test-subscription-email', function (Request $request) {
-        $user = $request->user();
-
-        // Find one subscription that is active (e.g. Netflix that we just inserted)
-        $subscription = \Illuminate\Support\Facades\DB::table('subscriptions')
-            ->where('user_id', $user->id)
-            ->first();
-
-        if ($subscription) {
-            \Illuminate\Support\Facades\Mail::to($user->email)->send(new \App\Mail\SubscriptionAlertMail($user, $subscription));
-            return response()->json(['success' => true, 'message' => 'Test email sent successfully to ' . $user->email]);
-        }
-
-        return response()->json(['success' => false, 'message' => 'No subscriptions found to test with.'], 404);
-    });
-
     Route::get('/investments', [\App\Http\Controllers\InvestmentController::class, 'index']);
     Route::post('/investments', [\App\Http\Controllers\InvestmentController::class, 'store']);
     Route::put('/investments/{id}', [\App\Http\Controllers\InvestmentController::class, 'update']);
@@ -312,21 +314,39 @@ Route::middleware('auth:sanctum')->group(function () {
     
     Route::post('/investment-alerts', [\App\Http\Controllers\InvestmentAlertController::class, 'store']);
 
-    // Exchange Rate
-    Route::get('/exchange-rate', [\App\Http\Controllers\ExchangeRateController::class, 'getRate']);
-
-    // Sports Logo Server Cache
+    // Sports Logo Server Cache (compartida entre usuarios)
     Route::get('/sports/logos', function () {
         return response()->json(\Illuminate\Support\Facades\Cache::get('sports_logos', []));
     });
+    // SEC-03 / V-07: solo URLs https de los CDNs de logos, tamaño acotado y límite de peticiones.
     Route::post('/sports/logos', function (Request $request) {
-        $key = $request->input('key');
-        $url = $request->input('url');
+        $validated = $request->validate([
+            'key' => 'required|string|max:150',
+            'url' => [
+                'nullable',
+                'string',
+                'max:500',
+                'url:https',
+                function (string $attribute, mixed $value, \Closure $fail) {
+                    if (!is_string($value)) {
+                        return; // la regla 'string' ya reporta el error
+                    }
+                    $host = strtolower((string) parse_url($value, PHP_URL_HOST));
+                    if (!preg_match('/(^|\.)(api-sports\.io|sportmonks\.com)$/', $host)) {
+                        $fail('The logo URL host is not allowed.');
+                    }
+                },
+            ],
+        ]);
+
+        $maxEntries = 5000;
         $logos = \Illuminate\Support\Facades\Cache::get('sports_logos', []);
-        if ($key) {
-            $logos[$key] = $url;
-            \Illuminate\Support\Facades\Cache::put('sports_logos', $logos, 60*60*24*30); // 30 days
+        if (!array_key_exists($validated['key'], $logos) && count($logos) >= $maxEntries) {
+            return response()->json(['success' => true, 'stored' => false]);
         }
-        return response()->json(['success' => true]);
-    });
+
+        $logos[$validated['key']] = $validated['url'] ?? null;
+        \Illuminate\Support\Facades\Cache::put('sports_logos', $logos, 60*60*24*30); // 30 days
+        return response()->json(['success' => true, 'stored' => true]);
+    })->middleware('throttle:60,1');
 });

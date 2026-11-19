@@ -1,32 +1,38 @@
 <?php
 
-return [
+/*
+|--------------------------------------------------------------------------
+| Cross-Origin Resource Sharing (CORS) Configuration
+|--------------------------------------------------------------------------
+|
+| SEC-03 / V-08: solo orígenes explícitos, sin comodines.
+| - FRONTEND_URL: frontend de producción.
+| - CORS_ALLOWED_ORIGINS: orígenes extra separados por comas (p. ej. previews).
+| - localhost solo fuera de producción.
+|
+*/
 
-    /*
-    |--------------------------------------------------------------------------
-    | Cross-Origin Resource Sharing (CORS) Configuration
-    |--------------------------------------------------------------------------
-    |
-    | Allows the frontend (both local and Render.com) to make API requests
-    | to this backend from a different origin.
-    |
-    */
+$localOrigins = [
+    'http://localhost:5173',
+    'http://localhost:3000',
+    'http://127.0.0.1:5173',
+];
+
+$extraOrigins = array_map('trim', explode(',', (string) env('CORS_ALLOWED_ORIGINS', '')));
+
+return [
 
     'paths' => ['api/*', 'sanctum/csrf-cookie'],
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => [
-        'http://localhost:5173',
-        'http://localhost:3000',
-        'http://127.0.0.1:5173',
-        env('FRONTEND_URL', 'http://localhost:5173'),
-    ],
+    'allowed_origins' => array_values(array_unique(array_filter(array_merge(
+        env('APP_ENV', 'production') === 'production' ? [] : $localOrigins,
+        [env('FRONTEND_URL')],
+        $extraOrigins,
+    )))),
 
-    'allowed_origins_patterns' => [
-        // Allow all onrender.com subdomains for deployment flexibility
-        '/^https:\/\/.*\.onrender\.com$/',
-    ],
+    'allowed_origins_patterns' => [],
 
     'allowed_headers' => ['*'],
 

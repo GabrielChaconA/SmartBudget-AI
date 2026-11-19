@@ -36,7 +36,7 @@ INSERT INTO categories (id, name, type, color, icon, created_at, updated_at) VAL
 SELECT setval('categories_id_seq', 31);
 
 -- Users and related data
-INSERT INTO users (id, name, last_name, email, password, created_at, updated_at) VALUES (1, 'Laura', 'Gonzalez', 'laura.gonzalez1@example.com', 'password', NOW(), NOW());
+INSERT INTO users (id, name, last_name, email, password, created_at, updated_at) VALUES (1, 'Laura', 'Gonzalez', 'laura.gonzalez1@example.com', '$2y$12$ljXdC2v0Yooi52tMMgYyQulL5DvxUr28JKh4FyTTzJ1aPxii7Sjs.', NOW(), NOW());
 INSERT INTO settings (user_id, currency, language, theme, monthly_income, payday, ai_enabled, created_at, updated_at) VALUES (1, 'MXN', 'es', 'dark', 18217.65, 4, true, NOW(), NOW());
 INSERT INTO accounts (id, user_id, name, balance, color, icon, type, currency, created_at, updated_at) VALUES (1, 1, 'Efectivo', 1546.11, '#28939d', 'icon-cash', 'cash', 'MXN', NOW(), NOW());
 INSERT INTO accounts (id, user_id, name, balance, color, icon, type, currency, created_at, updated_at) VALUES (2, 1, 'Nu', 12970.77, '#49c1f1', 'icon-cash', 'cash', 'MXN', NOW(), NOW());
@@ -396,7 +396,7 @@ INSERT INTO messages (id, conversation_id, sender, content, created_at, updated_
 INSERT INTO messages (id, conversation_id, sender, content, created_at, updated_at) VALUES (74, 5, 'user', 'Pregunta sobre ¿Cuánto puedo invertir este mes?', '2026-06-27 07:35:37', NOW());
 INSERT INTO messages (id, conversation_id, sender, content, created_at, updated_at) VALUES (75, 5, 'assistant', 'Respuesta del asistente a ¿Cuánto puedo invertir este mes? con análisis detallado.', '2026-06-27 07:43:37', NOW());
 INSERT INTO messages (id, conversation_id, sender, content, created_at, updated_at) VALUES (76, 5, 'user', 'Pregunta sobre ¿Cuánto puedo invertir este mes?', '2026-06-27 07:50:37', NOW());
-INSERT INTO users (id, name, last_name, email, password, created_at, updated_at) VALUES (2, 'Daniela', 'Hernandez', 'daniela.hernandez2@example.com', 'password', NOW(), NOW());
+INSERT INTO users (id, name, last_name, email, password, created_at, updated_at) VALUES (2, 'Daniela', 'Hernandez', 'daniela.hernandez2@example.com', '$2y$12$ljXdC2v0Yooi52tMMgYyQulL5DvxUr28JKh4FyTTzJ1aPxii7Sjs.', NOW(), NOW());
 INSERT INTO settings (user_id, currency, language, theme, monthly_income, payday, ai_enabled, created_at, updated_at) VALUES (2, 'USD', 'es', 'dark', 74800.14, 11, true, NOW(), NOW());
 INSERT INTO accounts (id, user_id, name, balance, color, icon, type, currency, created_at, updated_at) VALUES (5, 2, 'HSBC', 16952.75, '#55f570', 'icon-bank', 'bank', 'MXN', NOW(), NOW());
 INSERT INTO accounts (id, user_id, name, balance, color, icon, type, currency, created_at, updated_at) VALUES (6, 2, 'Efectivo', 33505.68, '#a8cc01', 'icon-bank', 'bank', 'MXN', NOW(), NOW());
@@ -728,7 +728,7 @@ INSERT INTO messages (id, conversation_id, sender, content, created_at, updated_
 INSERT INTO messages (id, conversation_id, sender, content, created_at, updated_at) VALUES (117, 8, 'user', 'Pregunta sobre Analiza mi portafolio', '2026-06-29 07:03:37', NOW());
 INSERT INTO messages (id, conversation_id, sender, content, created_at, updated_at) VALUES (118, 8, 'assistant', 'Respuesta del asistente a Analiza mi portafolio con análisis detallado.', '2026-06-29 07:12:37', NOW());
 INSERT INTO messages (id, conversation_id, sender, content, created_at, updated_at) VALUES (119, 8, 'user', 'Pregunta sobre Analiza mi portafolio', '2026-06-29 07:13:37', NOW());
-INSERT INTO users (id, name, last_name, email, password, created_at, updated_at) VALUES (3, 'Maria', 'Torres', 'maria.torres3@example.com', 'password', NOW(), NOW());
+INSERT INTO users (id, name, last_name, email, password, created_at, updated_at) VALUES (3, 'Maria', 'Torres', 'maria.torres3@example.com', '$2y$12$ljXdC2v0Yooi52tMMgYyQulL5DvxUr28JKh4FyTTzJ1aPxii7Sjs.', NOW(), NOW());
 INSERT INTO settings (user_id, currency, language, theme, monthly_income, payday, ai_enabled, created_at, updated_at) VALUES (3, 'MXN', 'es', 'system', 65458.24, 9, true, NOW(), NOW());
 INSERT INTO accounts (id, user_id, name, balance, color, icon, type, currency, created_at, updated_at) VALUES (11, 3, 'Santander', 30987.25, '#69dfa2', 'icon-investment', 'investment', 'MXN', NOW(), NOW());
 INSERT INTO accounts (id, user_id, name, balance, color, icon, type, currency, created_at, updated_at) VALUES (12, 3, 'Binance', 6557.49, '#dbcf36', 'icon-credit', 'credit', 'MXN', NOW(), NOW());
@@ -1076,7 +1076,7 @@ INSERT INTO messages (id, conversation_id, sender, content, created_at, updated_
 INSERT INTO messages (id, conversation_id, sender, content, created_at, updated_at) VALUES (180, 12, 'assistant', 'Respuesta del asistente a ¿Cuánto puedo invertir este mes? con análisis detallado.', '2026-06-28 07:59:37', NOW());
 INSERT INTO messages (id, conversation_id, sender, content, created_at, updated_at) VALUES (181, 12, 'user', 'Pregunta sobre ¿Cuánto puedo invertir este mes?', '2026-06-28 08:01:37', NOW());
 INSERT INTO messages (id, conversation_id, sender, content, created_at, updated_at) VALUES (182, 12, 'assistant', 'Respuesta del asistente a ¿Cuánto puedo invertir este mes? con análisis detallado.', '2026-06-28 08:09:37', NOW());
-INSERT INTO users (id, name, last_name, email, password, created_at, updated_at) VALUES (4, 'Laura', 'Perez', 'laura.perez4@example.com', 'password', NOW(), NOW());
+INSERT INTO users (id, name, last_name, email, password, created_at, updated_at) VALUES (4, 'Laura', 'Perez', 'laura.perez4@example.com', '$2y$12$ljXdC2v0Yooi52tMMgYyQulL5DvxUr28JKh4FyTTzJ1aPxii7Sjs.', NOW(), NOW());
 INSERT INTO settings (user_id, currency, language, theme, monthly_income, payday, ai_enabled, created_at, updated_at) VALUES (4, 'USD', 'es', 'system', 73809.46, 7, true, NOW(), NOW());
 INSERT INTO accounts (id, user_id, name, balance, color, icon, type, currency, created_at, updated_at) VALUES (15, 4, 'Nu', 44270.46, '#b4e6b6', 'icon-cash', 'cash', 'MXN', NOW(), NOW());
 INSERT INTO accounts (id, user_id, name, balance, color, icon, type, currency, created_at, updated_at) VALUES (16, 4, 'Santander', 19677.21, '#a6cdba', 'icon-investment', 'investment', 'MXN', NOW(), NOW());
@@ -1415,7 +1415,7 @@ INSERT INTO messages (id, conversation_id, sender, content, created_at, updated_
 INSERT INTO messages (id, conversation_id, sender, content, created_at, updated_at) VALUES (241, 16, 'user', 'Pregunta sobre Analiza mi portafolio', '2026-06-28 07:40:37', NOW());
 INSERT INTO messages (id, conversation_id, sender, content, created_at, updated_at) VALUES (242, 16, 'assistant', 'Respuesta del asistente a Analiza mi portafolio con análisis detallado.', '2026-06-28 07:43:37', NOW());
 INSERT INTO messages (id, conversation_id, sender, content, created_at, updated_at) VALUES (243, 16, 'user', 'Pregunta sobre Analiza mi portafolio', '2026-06-28 07:44:37', NOW());
-INSERT INTO users (id, name, last_name, email, password, created_at, updated_at) VALUES (5, 'Diego', 'Martinez', 'diego.martinez5@example.com', 'password', NOW(), NOW());
+INSERT INTO users (id, name, last_name, email, password, created_at, updated_at) VALUES (5, 'Diego', 'Martinez', 'diego.martinez5@example.com', '$2y$12$ljXdC2v0Yooi52tMMgYyQulL5DvxUr28JKh4FyTTzJ1aPxii7Sjs.', NOW(), NOW());
 INSERT INTO settings (user_id, currency, language, theme, monthly_income, payday, ai_enabled, created_at, updated_at) VALUES (5, 'EUR', 'es', 'light', 34633.50, 19, true, NOW(), NOW());
 INSERT INTO accounts (id, user_id, name, balance, color, icon, type, currency, created_at, updated_at) VALUES (19, 5, 'Mercado Pago', 31594.22, '#c1f697', 'icon-cash', 'cash', 'MXN', NOW(), NOW());
 INSERT INTO accounts (id, user_id, name, balance, color, icon, type, currency, created_at, updated_at) VALUES (20, 5, 'Banorte', 13271.65, '#9494d9', 'icon-wallet', 'wallet', 'MXN', NOW(), NOW());
@@ -1788,7 +1788,7 @@ INSERT INTO messages (id, conversation_id, sender, content, created_at, updated_
 INSERT INTO messages (id, conversation_id, sender, content, created_at, updated_at) VALUES (305, 21, 'assistant', 'Respuesta del asistente a Analiza mi portafolio con análisis detallado.', '2026-06-27 08:06:37', NOW());
 INSERT INTO messages (id, conversation_id, sender, content, created_at, updated_at) VALUES (306, 21, 'user', 'Pregunta sobre Analiza mi portafolio', '2026-06-27 08:09:37', NOW());
 INSERT INTO messages (id, conversation_id, sender, content, created_at, updated_at) VALUES (307, 21, 'assistant', 'Respuesta del asistente a Analiza mi portafolio con análisis detallado.', '2026-06-27 08:10:37', NOW());
-INSERT INTO users (id, name, last_name, email, password, created_at, updated_at) VALUES (6, 'Maria', 'Hernandez', 'maria.hernandez6@example.com', 'password', NOW(), NOW());
+INSERT INTO users (id, name, last_name, email, password, created_at, updated_at) VALUES (6, 'Maria', 'Hernandez', 'maria.hernandez6@example.com', '$2y$12$ljXdC2v0Yooi52tMMgYyQulL5DvxUr28JKh4FyTTzJ1aPxii7Sjs.', NOW(), NOW());
 INSERT INTO settings (user_id, currency, language, theme, monthly_income, payday, ai_enabled, created_at, updated_at) VALUES (6, 'USD', 'en', 'dark', 41692.02, 18, true, NOW(), NOW());
 INSERT INTO accounts (id, user_id, name, balance, color, icon, type, currency, created_at, updated_at) VALUES (25, 6, 'Nu', 31109.54, '#de97', 'icon-credit', 'credit', 'MXN', NOW(), NOW());
 INSERT INTO accounts (id, user_id, name, balance, color, icon, type, currency, created_at, updated_at) VALUES (26, 6, 'Mercado Pago', 28171.08, '#3ca443', 'icon-wallet', 'wallet', 'MXN', NOW(), NOW());
@@ -2151,7 +2151,7 @@ INSERT INTO messages (id, conversation_id, sender, content, created_at, updated_
 INSERT INTO messages (id, conversation_id, sender, content, created_at, updated_at) VALUES (370, 25, 'assistant', 'Respuesta del asistente a ¿Cuánto puedo invertir este mes? con análisis detallado.', '2026-06-28 08:06:37', NOW());
 INSERT INTO messages (id, conversation_id, sender, content, created_at, updated_at) VALUES (371, 25, 'user', 'Pregunta sobre ¿Cuánto puedo invertir este mes?', '2026-06-28 08:08:37', NOW());
 INSERT INTO messages (id, conversation_id, sender, content, created_at, updated_at) VALUES (372, 25, 'assistant', 'Respuesta del asistente a ¿Cuánto puedo invertir este mes? con análisis detallado.', '2026-06-28 08:11:37', NOW());
-INSERT INTO users (id, name, last_name, email, password, created_at, updated_at) VALUES (7, 'Maria', 'Lopez', 'maria.lopez7@example.com', 'password', NOW(), NOW());
+INSERT INTO users (id, name, last_name, email, password, created_at, updated_at) VALUES (7, 'Maria', 'Lopez', 'maria.lopez7@example.com', '$2y$12$ljXdC2v0Yooi52tMMgYyQulL5DvxUr28JKh4FyTTzJ1aPxii7Sjs.', NOW(), NOW());
 INSERT INTO settings (user_id, currency, language, theme, monthly_income, payday, ai_enabled, created_at, updated_at) VALUES (7, 'MXN', 'en', 'light', 13746.10, 4, true, NOW(), NOW());
 INSERT INTO accounts (id, user_id, name, balance, color, icon, type, currency, created_at, updated_at) VALUES (28, 7, 'Banorte', 29381.08, '#4f627c', 'icon-cash', 'cash', 'MXN', NOW(), NOW());
 INSERT INTO accounts (id, user_id, name, balance, color, icon, type, currency, created_at, updated_at) VALUES (29, 7, 'Binance', 5478.59, '#181931', 'icon-bank', 'bank', 'MXN', NOW(), NOW());
@@ -2486,7 +2486,7 @@ INSERT INTO messages (id, conversation_id, sender, content, created_at, updated_
 INSERT INTO messages (id, conversation_id, sender, content, created_at, updated_at) VALUES (419, 29, 'user', 'Pregunta sobre Analiza mi portafolio', '2026-06-28 07:53:37', NOW());
 INSERT INTO messages (id, conversation_id, sender, content, created_at, updated_at) VALUES (420, 29, 'assistant', 'Respuesta del asistente a Analiza mi portafolio con análisis detallado.', '2026-06-28 07:58:37', NOW());
 INSERT INTO messages (id, conversation_id, sender, content, created_at, updated_at) VALUES (421, 29, 'user', 'Pregunta sobre Analiza mi portafolio', '2026-06-28 08:06:37', NOW());
-INSERT INTO users (id, name, last_name, email, password, created_at, updated_at) VALUES (8, 'Maria', 'Ramirez', 'maria.ramirez8@example.com', 'password', NOW(), NOW());
+INSERT INTO users (id, name, last_name, email, password, created_at, updated_at) VALUES (8, 'Maria', 'Ramirez', 'maria.ramirez8@example.com', '$2y$12$ljXdC2v0Yooi52tMMgYyQulL5DvxUr28JKh4FyTTzJ1aPxii7Sjs.', NOW(), NOW());
 INSERT INTO settings (user_id, currency, language, theme, monthly_income, payday, ai_enabled, created_at, updated_at) VALUES (8, 'MXN', 'es', 'system', 43368.29, 22, true, NOW(), NOW());
 INSERT INTO accounts (id, user_id, name, balance, color, icon, type, currency, created_at, updated_at) VALUES (33, 8, 'Efectivo', 8432.25, '#ce693d', 'icon-bank', 'bank', 'MXN', NOW(), NOW());
 INSERT INTO accounts (id, user_id, name, balance, color, icon, type, currency, created_at, updated_at) VALUES (34, 8, 'Binance', 45961.94, '#c10de1', 'icon-credit', 'credit', 'MXN', NOW(), NOW());
@@ -2834,7 +2834,7 @@ INSERT INTO messages (id, conversation_id, sender, content, created_at, updated_
 INSERT INTO messages (id, conversation_id, sender, content, created_at, updated_at) VALUES (487, 34, 'assistant', 'Respuesta del asistente a Analiza mi portafolio con análisis detallado.', '2026-06-27 07:36:37', NOW());
 INSERT INTO messages (id, conversation_id, sender, content, created_at, updated_at) VALUES (488, 34, 'user', 'Pregunta sobre Analiza mi portafolio', '2026-06-27 07:42:37', NOW());
 INSERT INTO messages (id, conversation_id, sender, content, created_at, updated_at) VALUES (489, 34, 'assistant', 'Respuesta del asistente a Analiza mi portafolio con análisis detallado.', '2026-06-27 07:47:37', NOW());
-INSERT INTO users (id, name, last_name, email, password, created_at, updated_at) VALUES (9, 'Daniela', 'Gonzalez', 'daniela.gonzalez9@example.com', 'password', NOW(), NOW());
+INSERT INTO users (id, name, last_name, email, password, created_at, updated_at) VALUES (9, 'Daniela', 'Gonzalez', 'daniela.gonzalez9@example.com', '$2y$12$ljXdC2v0Yooi52tMMgYyQulL5DvxUr28JKh4FyTTzJ1aPxii7Sjs.', NOW(), NOW());
 INSERT INTO settings (user_id, currency, language, theme, monthly_income, payday, ai_enabled, created_at, updated_at) VALUES (9, 'EUR', 'es', 'dark', 31264.00, 24, true, NOW(), NOW());
 INSERT INTO accounts (id, user_id, name, balance, color, icon, type, currency, created_at, updated_at) VALUES (39, 9, 'Binance', 7077.11, '#464baa', 'icon-wallet', 'wallet', 'MXN', NOW(), NOW());
 INSERT INTO accounts (id, user_id, name, balance, color, icon, type, currency, created_at, updated_at) VALUES (40, 9, 'Binance', 39053.25, '#143fca', 'icon-bank', 'bank', 'MXN', NOW(), NOW());
@@ -3183,7 +3183,7 @@ INSERT INTO messages (id, conversation_id, sender, content, created_at, updated_
 INSERT INTO messages (id, conversation_id, sender, content, created_at, updated_at) VALUES (563, 40, 'assistant', 'Respuesta del asistente a ¿En qué gasto más? con análisis detallado.', '2026-06-26 07:19:37', NOW());
 INSERT INTO messages (id, conversation_id, sender, content, created_at, updated_at) VALUES (564, 40, 'user', 'Pregunta sobre ¿En qué gasto más?', '2026-06-26 07:23:37', NOW());
 INSERT INTO messages (id, conversation_id, sender, content, created_at, updated_at) VALUES (565, 40, 'assistant', 'Respuesta del asistente a ¿En qué gasto más? con análisis detallado.', '2026-06-26 07:27:37', NOW());
-INSERT INTO users (id, name, last_name, email, password, created_at, updated_at) VALUES (10, 'Diego', 'Torres', 'diego.torres10@example.com', 'password', NOW(), NOW());
+INSERT INTO users (id, name, last_name, email, password, created_at, updated_at) VALUES (10, 'Diego', 'Torres', 'diego.torres10@example.com', '$2y$12$ljXdC2v0Yooi52tMMgYyQulL5DvxUr28JKh4FyTTzJ1aPxii7Sjs.', NOW(), NOW());
 INSERT INTO settings (user_id, currency, language, theme, monthly_income, payday, ai_enabled, created_at, updated_at) VALUES (10, 'USD', 'en', 'dark', 40103.80, 3, true, NOW(), NOW());
 INSERT INTO accounts (id, user_id, name, balance, color, icon, type, currency, created_at, updated_at) VALUES (43, 10, 'GBM', 49046.29, '#d717d8', 'icon-cash', 'cash', 'MXN', NOW(), NOW());
 INSERT INTO accounts (id, user_id, name, balance, color, icon, type, currency, created_at, updated_at) VALUES (44, 10, 'Binance', 22295.24, '#ab01ab', 'icon-investment', 'investment', 'MXN', NOW(), NOW());

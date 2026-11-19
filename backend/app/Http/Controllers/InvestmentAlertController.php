@@ -17,7 +17,11 @@ class InvestmentAlertController extends Controller
         $user = $request->user();
         
         // Find the user's investment to get the base price
-        $investment = $user->investments()->where('symbol', $request->symbol)->first();
+        // User no tiene relación investments(); antes esta línea lanzaba un 500 (SEC-01 / V-14).
+        $investment = \Illuminate\Support\Facades\DB::table('investments')
+            ->where('user_id', $user->id)
+            ->where('symbol', $request->symbol)
+            ->first();
         if (!$investment) {
             return response()->json(['message' => 'Investment not found'], 404);
         }
