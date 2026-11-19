@@ -41,4 +41,16 @@ return [
         'redirect' => env('GOOGLE_REDIRECT_URI'),
     ],
 
+    /*
+    | Servicio interno de IA local (ai-service, Python + Ollama). Solo se usa a
+    | través de App\Services\Ai\AiServiceClient. El timeout debe ser mayor que
+    | OLLAMA_TIMEOUT_SECONDS del servicio (puede reintentar una vez).
+    */
+    'ai' => [
+        'url' => env('AI_SERVICE_URL', 'http://127.0.0.1:8001'),
+        'token' => env('AI_SERVICE_TOKEN'),
+        'timeout' => (int) env('AI_SERVICE_TIMEOUT', 150),
+        'connect_timeout' => (int) env('AI_SERVICE_CONNECT_TIMEOUT', 5),
+    ],
+
 ];

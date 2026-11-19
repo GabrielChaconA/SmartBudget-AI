@@ -178,6 +178,27 @@ Todos los errores tienen el mismo cuerpo:
 | 503 | `model_unavailable` | Ollama caído o modelo no descargado |
 | 504 | `model_timeout` | La inferencia excedió `OLLAMA_TIMEOUT_SECONDS` |
 
+## Integración con Laravel (AiServiceClient)
+
+Laravel llama al servicio solo a través de `App\Services\Ai\AiServiceClient`
+(`backend/app/Services/Ai/`), registrado en el contenedor:
+
+```php
+$ai = app(\App\Services\Ai\AiServiceClient::class);
+$ai->chat($user, $context, $history, $message, 'es');
+$ai->insights($user, $context, 'es');
+$ai->purchaseCheck($user, $context, 8000, 'TV', 'es');
+```
+
+- Configuración en `config/services.php` → `services.ai` (`AI_SERVICE_URL`, `AI_SERVICE_TOKEN`,
+  `AI_SERVICE_TIMEOUT`). `AI_SERVICE_TOKEN` debe ser igual en `backend/.env` y `ai-service/.env`,
+  y `AI_SERVICE_TIMEOUT` mayor que `OLLAMA_TIMEOUT_SECONDS`.
+- 503 / 504 / conexión rechazada / timeout → `AiServiceUnavailable`, que Laravel responde como
+  **503** `{"error": {"code": "ai_unavailable"}}` sin detalles internos.
+- Si `settings.ai_enabled` es `false` para el usuario no se hace la llamada:
+  `AiDisabledForUser` → **403** `{"error": {"code": "ai_disabled"}}`.
+- Pruebas: `backend/tests/Feature/Ai/AiServiceClientTest.php` (con `Http::fake()`).
+
 ## Pruebas
 
 ```bash
