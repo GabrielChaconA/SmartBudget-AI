@@ -1,0 +1,35 @@
+{
+  "as_of": "2026-11-19",
+  "currency": "MXN",
+  "monthly_income": 20000,
+  "payday": 30,
+  "month_income": 20000,
+  "month_expenses": 9000,
+  "accounts": [
+    { "name": "Cartera", "type": "cash", "balance": 2000 },
+    { "name": "BBVA", "type": "bank", "balance": 18000 },
+    { "name": "Tarjeta", "type": "credit", "balance": -5000 }
+  ],
+  "funds": [
+    { "name": "Comida", "balance": 2000, "categories": ["Supermercado", "Restaurantes"] }
+  ],
+  "subscriptions": [
+    { "name": "Netflix", "amount": 299, "billing_cycle": "monthly", "next_billing_date": "2026-11-25" },
+    { "name": "Spotify", "amount": 129, "billing_cycle": "monthly", "next_billing_date": "2026-12-05" },
+    { "name": "Gimnasio", "amount": 650, "billing_cycle": "monthly", "next_billing_date": "2026-11-28" }
+  ],
+  "budgets": [
+    { "category": "Comida", "amount": 6000, "spent": 4000 },
+    { "category": "Entretenimiento", "amount": 2000, "spent": 1000 }
+  ],
+  "goals": [
+    { "name": "Viaje", "target_amount": 12000, "current_amount": 6000, "deadline": "2027-05-19", "status": "active" }
+  ],
+  "investments": [
+    { "symbol": "VOO", "type": "etf", "quantity": 2, "average_price": 9000, "current_price": 9500, "currency": "MXN" }
+  ],
+  "recent_transactions": [
+    { "date": "2026-11-18", "type": "expense", "amount": 450, "category": "Comida", "description": "Súper" },
+    { "date": "2026-11-15", "type": "income", "amount": 10000, "category": "Salario", "description": "Quincena" }
+  ]
+}

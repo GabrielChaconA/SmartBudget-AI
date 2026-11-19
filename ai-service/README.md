@@ -90,6 +90,52 @@ Todas las variables están documentadas en [.env.example](.env.example). Las pri
 |---|---|---|---|
 | GET | `/health` | no | Estado: `ok`, `ollama_unavailable` o `model_not_downloaded` (503 en los dos últimos) |
 | GET | `/v1/models` | sí | Modelo principal + modelos de prueba y si están descargados |
+| POST | `/v1/chat` | sí | `{context, history, message, language}` → `{status, reply, intent, prompt_version, model, usage}` (SBI-11) |
+| POST | `/v1/insights` | sí | `{context, language}` → `{status, insights[1..3], reason, prompt_version, model, usage}` (SBI-14) |
+
+| POST | `/v1/purchase-check` | sí | `{context, amount, description?, language}` → `{status, verdict, reasons[], metrics, message, message_source, prompt_version, model, missing_data}` |
+
+Request y response están definidos con Pydantic y documentados en `/docs`.
+
+- **Contexto vacío** → `status: "insufficient_data"` con un mensaje fijo; no se llama al modelo.
+- **Insights inválidos** → `status: "model_error"`, `insights: []` y `reason` (nunca se devuelve
+  algo que no cumpla el schema). Si Ollama está caído o hay timeout → 503 / 504.
+- `usage` trae duración y tokens de la llamada: útil para comparar modelos.
+
+### Evaluación de pagos ("Quiero pagar X")
+
+Se activa con `POST /v1/purchase-check` o cuando `/v1/chat` detecta un mensaje como
+*"quiero pagar 8,000 de una TV"* (detección con reglas, sin LLM; la respuesta trae
+`intent: "purchase_check"` y el objeto `purchase`).
+
+1. **Métricas en Python** (`app/services/purchase/metrics.py`): dinero libre (saldo de cuentas
+   no crédito − suscripciones que se cobran antes del próximo payday), % del ingreso mensual,
+   presupuesto restante del mes y aporte mensual que necesitan las metas activas.
+2. **Veredicto por reglas** (`verdict_rules.py`): `recomendable`, `precaucion` o
+   `no_recomendable`, con los motivos (`reasons[]`). Con las mismas cifras siempre es el mismo.
+3. **El modelo solo redacta** `message` a partir de cifras y veredicto ya calculados. Si su texto
+   contiene cifras que no salen de los cálculos, afirma haber movido dinero, o el modelo falla,
+   se usa un mensaje de plantilla (`message_source: "template"`). El veredicto nunca cambia.
+4. `message` siempre termina con el aviso de que es una sugerencia y la decisión es del usuario.
+
+Si falta `monthly_income`, `payday` o el saldo de cuentas: `status: "insufficient_data"`,
+`verdict: null` y `missing_data` dice qué falta (no se suponen valores). Presupuestos, fechas de
+suscripciones o fechas límite de metas que falten se listan en `missing_data` pero no bloquean.
+
+### Mini conversación con el modelo
+
+El servicio no guarda estado, así que una conversación es reenviar el `history` en cada
+mensaje (lo que hará Laravel en SBI-11). Para probarlo ya:
+
+- **Terminal**: `python scripts/chat_cli.py` (o `--model gemma4:e4b`). Guarda el historial en
+  memoria; `/model <nombre>` cambia de modelo, `/compare <texto>` manda el mismo mensaje a
+  todos los modelos descargados, `/reset` borra el historial.
+- **Postman**: importa `postman/SmartBudget-AI-Service.postman_collection.json`, pon tu token en
+  la variable `token` y usa *Conversación → Enviar mensaje*: un script guarda el historial en
+  la variable `history`.
+- **Swagger**: `/docs` → Authorize → `POST /v1/chat` (historial a mano).
+
+El contexto de ejemplo está en `scripts/sample_context.json` (datos ficticios).
 
 ### Probar otros modelos
 
@@ -131,6 +177,27 @@ Todos los errores tienen el mismo cuerpo:
 | 422 | `invalid_request` | Petición inválida (no se devuelven los valores recibidos) |
 | 503 | `model_unavailable` | Ollama caído o modelo no descargado |
 | 504 | `model_timeout` | La inferencia excedió `OLLAMA_TIMEOUT_SECONDS` |
+
+## Integración con Laravel (AiServiceClient)
+
+Laravel llama al servicio solo a través de `App\Services\Ai\AiServiceClient`
+(`backend/app/Services/Ai/`), registrado en el contenedor:
+
+```php
+$ai = app(\App\Services\Ai\AiServiceClient::class);
+$ai->chat($user, $context, $history, $message, 'es');
+$ai->insights($user, $context, 'es');
+$ai->purchaseCheck($user, $context, 8000, 'TV', 'es');
+```
+
+- Configuración en `config/services.php` → `services.ai` (`AI_SERVICE_URL`, `AI_SERVICE_TOKEN`,
+  `AI_SERVICE_TIMEOUT`). `AI_SERVICE_TOKEN` debe ser igual en `backend/.env` y `ai-service/.env`,
+  y `AI_SERVICE_TIMEOUT` mayor que `OLLAMA_TIMEOUT_SECONDS`.
+- 503 / 504 / conexión rechazada / timeout → `AiServiceUnavailable`, que Laravel responde como
+  **503** `{"error": {"code": "ai_unavailable"}}` sin detalles internos.
+- Si `settings.ai_enabled` es `false` para el usuario no se hace la llamada:
+  `AiDisabledForUser` → **403** `{"error": {"code": "ai_disabled"}}`.
+- Pruebas: `backend/tests/Feature/Ai/AiServiceClientTest.php` (con `Http::fake()`).
 
 ## Pruebas
 
