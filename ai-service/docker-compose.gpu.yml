@@ -1,0 +1,10 @@
+# Override para usar GPU NVIDIA (requiere NVIDIA Container Toolkit / WSL2 + drivers).
+services:
+  ollama:
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
