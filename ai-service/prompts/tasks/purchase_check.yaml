@@ -1,0 +1,87 @@
+# Evaluación de pagos "Quiero pagar X" (POST /v1/purchase-check y /v1/chat).
+# El veredicto y las cifras se calculan en Python (verdict_rules.py); el modelo
+# solo redacta el mensaje. Los textos de "texts" se formatean con cifras ya
+# calculadas: {amount}, {free_money}, {free_after}, {commitments}, {pct_income},
+# {next_payday}, {days_until_payday}, {buffer}, {budget_remaining}, {goals_need}.
+name: purchase_check
+version: "1.0"
+system: [persona, guardrails]
+instructions_in: user
+output: purchase_message
+examples: purchase_check
+templates:
+  es: purchase_check.es.j2
+  en: purchase_check.en.j2
+texts:
+  es:
+    disclaimer: "Es solo una sugerencia: la decisión es tuya."
+    verdicts:
+      recomendable: Recomendable
+      precaucion: Con precaución
+      no_recomendable: No recomendable
+    reasons:
+      exceeds_free_money: "El pago ({amount}) supera tu dinero libre hasta el próximo día de pago ({free_money})."
+      very_high_income_share: "El pago equivale al {pct_income} de tu ingreso mensual."
+      high_income_share: "El pago equivale al {pct_income} de tu ingreso mensual."
+      low_buffer: "Después del pago te quedarían {free_after} hasta el {next_payday}, menos del colchón sugerido ({buffer})."
+      exceeds_budget: "Con este pago superarías tu presupuesto del mes; te quedan {budget_remaining}."
+      goals_at_risk: "Te quedarían {free_after}, menos de lo que tus metas necesitan este mes ({goals_need})."
+      within_means: "El pago cabe en tu dinero libre ({free_money}) sin afectar tus compromisos."
+    metrics:
+      amount: Monto del pago
+      liquid_balance: Saldo disponible en cuentas
+      commitments_before_payday: Compromisos antes del próximo día de pago
+      free_money: Dinero libre
+      free_after_purchase: Dinero libre después del pago
+      pct_of_monthly_income: Porcentaje de tu ingreso mensual
+      next_payday: Próximo día de pago
+      budget_remaining: Presupuesto restante del mes
+      goals_monthly_need: Aporte mensual que necesitan tus metas
+    missing:
+      monthly_income: tu ingreso mensual
+      payday: tu día de pago
+      accounts: el saldo de tus cuentas
+      budgets: tus presupuestos del mes
+      subscription_dates: la fecha de próximo cobro de algunas suscripciones
+      goal_deadlines: la fecha límite de algunas metas
+    insufficient_data: "Para evaluar este pago necesito {missing}. Agrégalo en SmartBudget y vuelve a preguntarme."
+    fallback:
+      recomendable: "Según tus números, puedes hacer este pago de {amount}: te quedarían {free_after} libres hasta el {next_payday}."
+      precaucion: "Puedes hacer este pago de {amount}, pero con cuidado: te quedarían {free_after} libres hasta el {next_payday}."
+      no_recomendable: "Por ahora no te recomiendo este pago de {amount}: tu dinero libre hasta el {next_payday} es de {free_money}."
+  en:
+    disclaimer: "This is only a suggestion: the decision is yours."
+    verdicts:
+      recomendable: Recommended
+      precaucion: Be careful
+      no_recomendable: Not recommended
+    reasons:
+      exceeds_free_money: "The payment ({amount}) exceeds your free money until your next payday ({free_money})."
+      very_high_income_share: "The payment is {pct_income} of your monthly income."
+      high_income_share: "The payment is {pct_income} of your monthly income."
+      low_buffer: "After paying you would have {free_after} left until {next_payday}, below the suggested buffer ({buffer})."
+      exceeds_budget: "This payment would put you over this month's budget; you have {budget_remaining} left."
+      goals_at_risk: "You would have {free_after} left, less than your goals need this month ({goals_need})."
+      within_means: "The payment fits in your free money ({free_money}) without affecting your commitments."
+    metrics:
+      amount: Payment amount
+      liquid_balance: Available balance in accounts
+      commitments_before_payday: Commitments before next payday
+      free_money: Free money
+      free_after_purchase: Free money after the payment
+      pct_of_monthly_income: Share of your monthly income
+      next_payday: Next payday
+      budget_remaining: Budget left this month
+      goals_monthly_need: Monthly contribution your goals need
+    missing:
+      monthly_income: your monthly income
+      payday: your payday
+      accounts: your account balances
+      budgets: your monthly budgets
+      subscription_dates: the next billing date of some subscriptions
+      goal_deadlines: the deadline of some goals
+    insufficient_data: "To evaluate this payment I need {missing}. Add it in SmartBudget and ask me again."
+    fallback:
+      recomendable: "Based on your numbers, you can make this {amount} payment: you would have {free_after} free until {next_payday}."
+      precaucion: "You can make this {amount} payment, but carefully: you would have {free_after} free until {next_payday}."
+      no_recomendable: "For now I don't recommend this {amount} payment: your free money until {next_payday} is {free_money}."

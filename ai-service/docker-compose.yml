@@ -1,0 +1,59 @@
+# Servicio de IA local + Ollama.
+#   docker compose up --build
+# Con GPU NVIDIA:
+#   docker compose -f docker-compose.yml -f docker-compose.gpu.yml up --build
+name: smartbudget-ai
+
+services:
+  ollama:
+    image: ollama/ollama:${OLLAMA_IMAGE_TAG:-latest}
+    # Sin "ports": Ollama solo es accesible dentro de la red de compose
+    # (y no choca con un Ollama instalado en el host en el puerto 11434).
+    volumes:
+      - ollama-models:/root/.ollama
+    environment:
+      OLLAMA_KEEP_ALIVE: ${OLLAMA_KEEP_ALIVE:-10m}
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    restart: unless-stopped
+
+  # Descarga OLLAMA_MODEL y los modelos de prueba de AI_ALLOWED_MODELS.
+  # Termina al acabar; mientras descarga, /health responde "model_not_downloaded".
+  ollama-pull:
+    image: ollama/ollama:${OLLAMA_IMAGE_TAG:-latest}
+    depends_on:
+      ollama:
+        condition: service_healthy
+    environment:
+      OLLAMA_HOST: http://ollama:11434
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen3:8b}
+      AI_ALLOWED_MODELS: ${AI_ALLOWED_MODELS:-}
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        set -e
+        for m in $$OLLAMA_MODEL $$(echo "$$AI_ALLOWED_MODELS" | tr ',' ' '); do
+          echo "==> ollama pull $$m"
+          ollama pull "$$m"
+        done
+    restart: "no"
+
+  ai-service:
+    build: .
+    env_file: .env
+    environment:
+      OLLAMA_HOST: http://ollama:11434
+    # Solo en localhost: el servicio es interno, no se expone a internet.
+    ports:
+      - "127.0.0.1:${AI_SERVICE_PORT:-8001}:8000"
+    depends_on:
+      ollama:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  ollama-models:

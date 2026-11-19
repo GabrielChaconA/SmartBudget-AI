@@ -1,0 +1,12 @@
+# Ejemplo few-shot de insights. Datos ficticios, solo muestran el formato.
+- user: "Ejemplo de formato (datos ficticios): suscripciones a 3 servicios de streaming, presupuesto de restaurantes al 95 %."
+  assistant:
+    insights:
+      - title: Tres servicios de streaming
+        message: Pagas tres plataformas de streaming al mes. Revisa si las usas todas; cancelar una libera dinero cada mes.
+        category: subscriptions
+        priority: medium
+      - title: Restaurantes casi al límite
+        message: Ya usaste el 95 % de tu presupuesto de restaurantes. Intenta cocinar en casa lo que queda del mes.
+        category: budget
+        priority: high

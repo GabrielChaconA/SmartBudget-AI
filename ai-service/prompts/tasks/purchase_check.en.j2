@@ -1,0 +1,17 @@
+## Task: write the evaluation of a payment
+The user wants to pay {{ amount }}{% if description %} ({{ description }}){% endif %}.
+The analysis is ALREADY done and you must not change it:
+- Verdict: {{ verdict_label }}
+- Reasons:
+{% for reason in reasons %}
+  - {{ reason }}
+{% endfor %}
+- Calculated figures:
+{% for m in metrics %}
+  - {{ m.label }}: {{ m.value }}
+{% endfor %}
+
+Write in "message" 2 or 3 friendly, concise sentences explaining the verdict.
+- Only use the figures above, copied exactly as shown; do not calculate new figures.
+- Do not suggest executing payments, transfers or money movements.
+- Do not add notices like "this is only a suggestion": they are added separately.

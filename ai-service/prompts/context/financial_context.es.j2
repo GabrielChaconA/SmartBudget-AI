@@ -1,0 +1,59 @@
+{% set cur = ctx.currency %}
+## Contexto financiero del usuario
+("—" significa que el dato no está disponible)
+- Fecha de referencia: {{ ctx.as_of or "—" }}
+- Moneda: {{ cur }}
+- Ingreso mensual: {{ ctx.monthly_income | money(cur) }}
+- Día de pago (payday): {{ ctx.payday or "—" }}
+- Mes actual: ingresos {{ ctx.month_income | money(cur) }}, gastos {{ ctx.month_expenses | money(cur) }}
+
+### Cuentas
+{% for a in ctx.accounts %}
+- {{ a.name }} ({{ a.type or "sin tipo" }}): {{ a.balance | money(a.currency or cur) }}
+{% else %}
+- Sin cuentas registradas.
+{% endfor %}
+
+### Fondos (cajas)
+{% for f in ctx.funds %}
+- {{ f.name }}: {{ f.balance | money(cur) }}{% if f.categories %} — categorías: {{ f.categories | join(", ") }}{% endif %}
+
+{% else %}
+- Sin fondos.
+{% endfor %}
+
+### Suscripciones
+{% for s in ctx.subscriptions %}
+- {{ s.name }}: {{ s.amount | money(cur) }} ({{ s.billing_cycle or "—" }}), próximo cobro {{ s.next_billing_date or "—" }}
+{% else %}
+- Sin suscripciones.
+{% endfor %}
+
+### Presupuestos del mes
+{% for b in ctx.budgets %}
+- {{ b.category }}: gastado {{ b.spent | money(cur) }} de {{ b.amount | money(cur) }}
+{% else %}
+- Sin presupuestos.
+{% endfor %}
+
+### Metas
+{% for g in ctx.goals %}
+- {{ g.name }} ({{ g.status or "active" }}): {{ g.current_amount | money(cur) }} de {{ g.target_amount | money(cur) }}, fecha límite {{ g.deadline or "—" }}
+{% else %}
+- Sin metas.
+{% endfor %}
+
+### Inversiones
+{% for i in ctx.investments %}
+- {{ i.symbol }} ({{ i.type or "—" }}): {{ i.quantity }} unidades, precio promedio {{ i.average_price | money(i.currency or cur) }}, precio actual {{ i.current_price | money(i.currency or cur) }}
+{% else %}
+- Sin inversiones.
+{% endfor %}
+
+### Movimientos recientes
+{% for t in ctx.recent_transactions %}
+- {{ t.date }} · {{ t.type }} · {{ t.amount | money(cur) }} · {{ t.category or "sin categoría" }}{% if t.description %} · {{ t.description }}{% endif %}
+
+{% else %}
+- Sin movimientos recientes.
+{% endfor %}

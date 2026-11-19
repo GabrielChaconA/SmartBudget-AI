@@ -1,0 +1,12 @@
+# Few-shot insights example. Fictional data, only shows the format.
+- user: "Format example (fictional data): 3 streaming subscriptions, restaurant budget at 95%."
+  assistant:
+    insights:
+      - title: Three streaming services
+        message: You pay for three streaming platforms each month. Check whether you use them all; cancelling one frees money every month.
+        category: subscriptions
+        priority: medium
+      - title: Restaurants almost at the limit
+        message: You've used 95% of your restaurant budget. Try cooking at home for the rest of the month.
+        category: budget
+        priority: high

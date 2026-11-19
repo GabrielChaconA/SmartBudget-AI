@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "chat_reply",
+  "type": "object",
+  "properties": {
+    "reply": { "type": "string", "minLength": 1, "maxLength": 1500 },
+    "intent": {
+      "type": "string",
+      "enum": [
+        "general",
+        "spending",
+        "budgets",
+        "subscriptions",
+        "goals",
+        "investments",
+        "purchase_check",
+        "out_of_scope"
+      ]
+    }
+  },
+  "required": ["reply", "intent"],
+  "additionalProperties": false
+}
